@@ -117,7 +117,7 @@ fun MapScreen(
     geofencePendingIntent: PendingIntent,
     database: AppDatabase
 ) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    var selectedTab by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val paris = LatLng(48.8566, 2.3522)
@@ -402,691 +402,372 @@ fun MapScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(
-                myLocationButtonEnabled = false,
-                rotationGesturesEnabled = true,
-                tiltGesturesEnabled = true,
-                zoomControlsEnabled = false,
-                zoomGesturesEnabled = true
-            ),
-            properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
-            onMapLoaded = {
-                isMapLoaded = true
-            },
-            onMapClick = { latLng ->
-                if (isAddingGeofence) {
-                    getAddressFromLocation(latLng) { address ->
-                        showNameDialog = latLng
-                        zoneName = address
-                    }
-                } else {
-                    selectedGeofence = null
-                    isEditingRadius = false
-                }
-            },
-            onMapLongClick = { latLng ->
-                if (hasLocationPermission) {
-                    getAddressFromLocation(latLng) { address ->
-                        showNameDialog = latLng
-                        zoneName = address
-                    }
-                } else {
-                    val permissions = mutableListOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                    }
-                    permissionLauncher.launch(permissions.toTypedArray())
-                }
-            }
-        ) {
-            // Afficher les zones existantes
-            geofences.forEach { geofence ->
-                Marker(
-                    state = MarkerState(position = geofence.latLng),
-                    title = geofence.name,
-                    snippet = context.getString(R.string.geofencing_zone),
-                    onClick = {
-                        selectedGeofence = geofence
-                        editingRadius = geofence.radius
-                        true
-                    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                Circle(
-                    center = geofence.latLng,
-                    radius = geofence.radius.toDouble(),
-                    strokeWidth = 2f,
-                    strokeColor = if (geofence == selectedGeofence) Color.Red else Color.Blue,
-                    fillColor = if (geofence == selectedGeofence) 
-                        Color.Red.copy(alpha = 0.3f) else Color.Blue.copy(alpha = 0.3f)
+            )
+        },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Place, contentDescription = "Carte") },
+                    label = { Text("Carte") },
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 }
                 )
-                
-                // Afficher le contrôle de redimensionnement si la zone est sélectionnée
-                if (geofence == selectedGeofence && isEditingRadius) {
-                    Circle(
-                        center = geofence.latLng,
-                        radius = editingRadius.toDouble(),
-                        strokeWidth = 3f,
-                        strokeColor = Color.Green,
-                        fillColor = Color.Transparent
-                    )
-                }
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.List, contentDescription = "Zones") },
+                    label = { Text("Zones") },
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 }
+                )
             }
         }
-
-        // Loading indicator
-        if (!isMapLoaded) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-
-        // Action buttons
-        Column(
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            SmallFloatingActionButton(
-                onClick = {
-                    if (!hasLocationPermission) {
-                        val permissions = mutableListOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                        }
-                        permissionLauncher.launch(permissions.toTypedArray())
-                    } else {
-                        isAddingGeofence = !isAddingGeofence
-                        if (isAddingGeofence) {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.click_to_add_zone),
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = context.getString(R.string.add_zone)
-                )
-            }
-
-            SmallFloatingActionButton(
-                onClick = {
-                    if (!hasLocationPermission) {
-                        val permissions = mutableListOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                        }
-                        permissionLauncher.launch(permissions.toTypedArray())
-                    } else {
-                        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                            location?.let {
-                                val currentLatLng = LatLng(it.latitude, it.longitude)
-                                scope.launch {
-                                    cameraPositionState.animate(
-                                        update = CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f),
-                                        durationMs = 1000
-                                    )
+            when (selectedTab) {
+                0 -> {
+                    // Contenu de la carte
+                    GoogleMap(
+                        modifier = Modifier.fillMaxSize(),
+                        cameraPositionState = cameraPositionState,
+                        uiSettings = MapUiSettings(
+                            myLocationButtonEnabled = false,
+                            rotationGesturesEnabled = true,
+                            tiltGesturesEnabled = true,
+                            zoomControlsEnabled = false,
+                            zoomGesturesEnabled = true
+                        ),
+                        properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
+                        onMapLoaded = {
+                            isMapLoaded = true
+                        },
+                        onMapClick = { latLng ->
+                            if (isAddingGeofence) {
+                                getAddressFromLocation(latLng) { address ->
+                                    showNameDialog = latLng
+                                    zoneName = address
                                 }
+                            } else {
+                                selectedGeofence = null
+                                isEditingRadius = false
+                            }
+                        },
+                        onMapLongClick = { latLng ->
+                            if (hasLocationPermission) {
+                                getAddressFromLocation(latLng) { address ->
+                                    showNameDialog = latLng
+                                    zoneName = address
+                                }
+                            } else {
+                                val permissions = mutableListOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                                }
+                                permissionLauncher.launch(permissions.toTypedArray())
                             }
                         }
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MyLocation,
-                    contentDescription = context.getString(R.string.my_location)
-                )
-            }
-        }
-
-        // Zone details card
-        AnimatedVisibility(
-            visible = selectedGeofence != null,
-            enter = slideInVertically { -it } + fadeIn(),
-            exit = slideOutVertically { -it } + fadeOut(),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(16.dp)
-        ) {
-            selectedGeofence?.let { geofence ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = context.getString(R.string.zone_details),
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                            IconButton(onClick = { selectedGeofence = null }) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = context.getString(R.string.close)
-                                )
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = geofence.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        
-                        Text(
-                            text = context.getString(R.string.zone_radius, editingRadius.toInt()),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        
-                        if (isEditingRadius) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = context.getString(R.string.drag_to_resize),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Slider(
-                                value = editingRadius,
-                                onValueChange = { editingRadius = it },
-                                valueRange = MIN_RADIUS..MAX_RADIUS,
-                                onValueChangeFinished = {
-                                    updateGeofenceRadius(geofence, editingRadius)
-                                    isEditingRadius = false
-                                }
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = context.getString(R.string.min_radius),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = context.getString(R.string.max_radius),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
+                        // Afficher les zones existantes
+                        geofences.forEach { geofence ->
+                            Marker(
+                                state = MarkerState(position = geofence.latLng),
+                                title = geofence.name,
+                                snippet = context.getString(R.string.geofencing_zone),
                                 onClick = {
-                                    updateGeofenceRadius(geofence, editingRadius)
-                                    isEditingRadius = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(context.getString(R.string.save))
-                            }
-                        } else {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = context.getString(R.string.zone_actions),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = { showRenameDialog = geofence },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(context.getString(R.string.edit_zone_name))
+                                    selectedGeofence = geofence
+                                    editingRadius = geofence.radius
+                                    true
                                 }
-                                
-                                OutlinedButton(
-                                    onClick = { isEditingRadius = true },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.RadioButtonChecked,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(context.getString(R.string.edit_zone_radius))
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = { showDeleteConfirmation = geofence },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(context.getString(R.string.delete_zone))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                ZonesList(
-                    zones = geofences,
-                    onZoneClick = { zone ->
-                        scope.launch {
-                            // Centrer la carte sur la zone
-                            cameraPositionState.animate(
-                                update = CameraUpdateFactory.newLatLngZoom(zone.latLng, 15f),
-                                durationMs = 1000
                             )
-                            // Sélectionner la zone
-                            selectedGeofence = zone
-                            // Fermer le drawer
-                            drawerState.close()
-                        }
-                    },
-                    onEditClick = { zone ->
-                        scope.launch {
-                            showRenameDialog = zone
-                            drawerState.close()
-                        }
-                    },
-                    onDeleteClick = { zone ->
-                        scope.launch {
-                            showDeleteConfirmation = zone
-                            drawerState.close()
-                        }
-                    }
-                )
-            }
-        }
-    ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.app_name)) },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = stringResource(R.string.open_zones_list)
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                )
-            }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraPositionState,
-                    uiSettings = MapUiSettings(
-                        myLocationButtonEnabled = false,
-                        rotationGesturesEnabled = true,
-                        tiltGesturesEnabled = true,
-                        zoomControlsEnabled = false,
-                        zoomGesturesEnabled = true
-                    ),
-                    properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
-                    onMapLoaded = {
-                        isMapLoaded = true
-                    },
-                    onMapClick = { latLng ->
-                        if (isAddingGeofence) {
-                            getAddressFromLocation(latLng) { address ->
-                                showNameDialog = latLng
-                                zoneName = address
-                            }
-                        } else {
-                            selectedGeofence = null
-                            isEditingRadius = false
-                        }
-                    },
-                    onMapLongClick = { latLng ->
-                        if (hasLocationPermission) {
-                            getAddressFromLocation(latLng) { address ->
-                                showNameDialog = latLng
-                                zoneName = address
-                            }
-                        } else {
-                            val permissions = mutableListOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                            }
-                            permissionLauncher.launch(permissions.toTypedArray())
-                        }
-                    }
-                ) {
-                    // Afficher les zones existantes
-                    geofences.forEach { geofence ->
-                        Marker(
-                            state = MarkerState(position = geofence.latLng),
-                            title = geofence.name,
-                            snippet = context.getString(R.string.geofencing_zone),
-                            onClick = {
-                                selectedGeofence = geofence
-                                editingRadius = geofence.radius
-                                true
-                            }
-                        )
-                        Circle(
-                            center = geofence.latLng,
-                            radius = geofence.radius.toDouble(),
-                            strokeWidth = 2f,
-                            strokeColor = if (geofence == selectedGeofence) Color.Red else Color.Blue,
-                            fillColor = if (geofence == selectedGeofence) 
-                                Color.Red.copy(alpha = 0.3f) else Color.Blue.copy(alpha = 0.3f)
-                        )
-                        
-                        // Afficher le contrôle de redimensionnement si la zone est sélectionnée
-                        if (geofence == selectedGeofence && isEditingRadius) {
                             Circle(
                                 center = geofence.latLng,
-                                radius = editingRadius.toDouble(),
-                                strokeWidth = 3f,
-                                strokeColor = Color.Green,
-                                fillColor = Color.Transparent
+                                radius = geofence.radius.toDouble(),
+                                strokeWidth = 2f,
+                                strokeColor = if (geofence == selectedGeofence) Color.Red else Color.Blue,
+                                fillColor = if (geofence == selectedGeofence) 
+                                    Color.Red.copy(alpha = 0.3f) else Color.Blue.copy(alpha = 0.3f)
+                            )
+                            
+                            if (geofence == selectedGeofence && isEditingRadius) {
+                                Circle(
+                                    center = geofence.latLng,
+                                    radius = editingRadius.toDouble(),
+                                    strokeWidth = 3f,
+                                    strokeColor = Color.Green,
+                                    fillColor = Color.Transparent
+                                )
+                            }
+                        }
+                    }
+
+                    // Loading indicator
+                    if (!isMapLoaded) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    // Action buttons
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                            .navigationBarsPadding(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SmallFloatingActionButton(
+                            onClick = {
+                                if (!hasLocationPermission) {
+                                    val permissions = mutableListOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                        permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                                    }
+                                    permissionLauncher.launch(permissions.toTypedArray())
+                                } else {
+                                    isAddingGeofence = !isAddingGeofence
+                                    if (isAddingGeofence) {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.click_to_add_zone),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            },
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = context.getString(R.string.add_zone)
+                            )
+                        }
+
+                        SmallFloatingActionButton(
+                            onClick = {
+                                if (!hasLocationPermission) {
+                                    val permissions = mutableListOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                        permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                                    }
+                                    permissionLauncher.launch(permissions.toTypedArray())
+                                } else {
+                                    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+                                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                                        location?.let {
+                                            val currentLatLng = LatLng(it.latitude, it.longitude)
+                                            scope.launch {
+                                                cameraPositionState.animate(
+                                                    update = CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f),
+                                                    durationMs = 1000
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = context.getString(R.string.my_location)
                             )
                         }
                     }
-                }
 
-                // Loading indicator
-                if (!isMapLoaded) {
-                    Box(
+                    // Zone details card
+                    AnimatedVisibility(
+                        visible = selectedGeofence != null,
+                        enter = slideInVertically { -it } + fadeIn(),
+                        exit = slideOutVertically { -it } + fadeOut(),
                         modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
+                            .align(Alignment.TopCenter)
+                            .padding(16.dp)
                     ) {
-                        CircularProgressIndicator()
-                    }
-                }
-
-                // Action buttons
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                        .navigationBarsPadding(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SmallFloatingActionButton(
-                        onClick = {
-                            if (!hasLocationPermission) {
-                                val permissions = mutableListOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                                }
-                                permissionLauncher.launch(permissions.toTypedArray())
-                            } else {
-                                isAddingGeofence = !isAddingGeofence
-                                if (isAddingGeofence) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.click_to_add_zone),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = context.getString(R.string.add_zone)
-                        )
-                    }
-
-                    SmallFloatingActionButton(
-                        onClick = {
-                            if (!hasLocationPermission) {
-                                val permissions = mutableListOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                                }
-                                permissionLauncher.launch(permissions.toTypedArray())
-                            } else {
-                                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                                    location?.let {
-                                        val currentLatLng = LatLng(it.latitude, it.longitude)
-                                        scope.launch {
-                                            cameraPositionState.animate(
-                                                update = CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f),
-                                                durationMs = 1000
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MyLocation,
-                            contentDescription = context.getString(R.string.my_location)
-                        )
-                    }
-                }
-
-                // Zone details card
-                AnimatedVisibility(
-                    visible = selectedGeofence != null,
-                    enter = slideInVertically { -it } + fadeIn(),
-                    exit = slideOutVertically { -it } + fadeOut(),
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(16.dp)
-                ) {
-                    selectedGeofence?.let { geofence ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp)
+                        selectedGeofence?.let { geofence ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
                                 ) {
-                                    Text(
-                                        text = context.getString(R.string.zone_details),
-                                        style = MaterialTheme.typography.titleLarge
-                                    )
-                                    IconButton(onClick = { selectedGeofence = null }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = context.getString(R.string.close)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = context.getString(R.string.zone_details),
+                                            style = MaterialTheme.typography.titleLarge
                                         )
-                                    }
-                                }
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                Text(
-                                    text = geofence.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                
-                                Text(
-                                    text = context.getString(R.string.zone_radius, editingRadius.toInt()),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                
-                                if (isEditingRadius) {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        text = context.getString(R.string.drag_to_resize),
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                    Slider(
-                                        value = editingRadius,
-                                        onValueChange = { editingRadius = it },
-                                        valueRange = MIN_RADIUS..MAX_RADIUS,
-                                        onValueChangeFinished = {
-                                            updateGeofenceRadius(geofence, editingRadius)
-                                            isEditingRadius = false
+                                        IconButton(onClick = { selectedGeofence = null }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = context.getString(R.string.close)
+                                            )
                                         }
-                                    )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = context.getString(R.string.min_radius),
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            text = context.getString(R.string.max_radius),
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
                                     }
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Button(
-                                        onClick = {
-                                            updateGeofenceRadius(geofence, editingRadius)
-                                            isEditingRadius = false
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text(context.getString(R.string.save))
-                                    }
-                                } else {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        text = context.getString(R.string.zone_actions),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
+                                    
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        OutlinedButton(
-                                            onClick = { showRenameDialog = geofence },
-                                            modifier = Modifier.weight(1f)
+                                    
+                                    Text(
+                                        text = geofence.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    
+                                    Text(
+                                        text = context.getString(R.string.zone_radius, editingRadius.toInt()),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    
+                                    if (isEditingRadius) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text(
+                                            text = context.getString(R.string.drag_to_resize),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Slider(
+                                            value = editingRadius,
+                                            onValueChange = { editingRadius = it },
+                                            valueRange = MIN_RADIUS..MAX_RADIUS,
+                                            onValueChangeFinished = {
+                                                updateGeofenceRadius(geofence, editingRadius)
+                                                isEditingRadius = false
+                                            }
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = context.getString(R.string.min_radius),
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                            Text(
+                                                text = context.getString(R.string.max_radius),
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = {
+                                                updateGeofenceRadius(geofence, editingRadius)
+                                                isEditingRadius = false
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(context.getString(R.string.save))
+                                        }
+                                    } else {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text(
+                                            text = context.getString(R.string.zone_actions),
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            OutlinedButton(
+                                                onClick = { showRenameDialog = geofence },
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Edit,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(context.getString(R.string.edit_zone_name))
+                                            }
+                                            
+                                            OutlinedButton(
+                                                onClick = { isEditingRadius = true },
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.RadioButtonChecked,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(context.getString(R.string.edit_zone_radius))
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Button(
+                                            onClick = { showDeleteConfirmation = geofence },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.error
+                                            ),
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.Edit,
+                                                imageVector = Icons.Default.Delete,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(18.dp)
                                             )
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text(context.getString(R.string.edit_zone_name))
+                                            Text(context.getString(R.string.delete_zone))
                                         }
-                                        
-                                        OutlinedButton(
-                                            onClick = { isEditingRadius = true },
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.RadioButtonChecked,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(context.getString(R.string.edit_zone_radius))
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Button(
-                                        onClick = { showDeleteConfirmation = geofence },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.error
-                                        ),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(context.getString(R.string.delete_zone))
                                     }
                                 }
                             }
                         }
                     }
+                }
+                1 -> {
+                    // Liste des zones
+                    ZonesList(
+                        zones = geofences,
+                        onZoneClick = { zone ->
+                            selectedGeofence = zone
+                            selectedTab = 0 // Retour à la carte
+                            scope.launch {
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(zone.latLng, 15f),
+                                    durationMs = 1000
+                                )
+                            }
+                        },
+                        onEditClick = { zone ->
+                            showRenameDialog = zone
+                        },
+                        onDeleteClick = { zone ->
+                            showDeleteConfirmation = zone
+                        }
+                    )
                 }
             }
         }

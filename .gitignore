@@ -1,0 +1,22 @@
+# Fichiers générés par Android Studio
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Fichiers de build
+/app/build/
+/app/release/
+
+# Fichiers de configuration locale
+local.properties
+*.log
+
+# Fichiers système
+.DS_Store
+Thumbs.db 

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ThePOC</string>
+    
+    <!-- Permissions -->
+    <string name="location_permission_required">Location permissions are required for geofencing</string>
+    
+    <!-- Map Screen -->
+    <string name="add_zone">Add zone</string>
+    <string name="my_location">My location</string>
+    <string name="click_to_add_zone">Click on the map or long press to add a zone</string>
+    <string name="zone_added_success">Zone added successfully</string>
+    <string name="error_adding_zone">Error adding zone: %1$s</string>
+    <string name="missing_location_permission">Missing location permission</string>
+    
+    <!-- Zone Dialog -->
+    <string name="name_zone">Name the zone</string>
+    <string name="zone_name_hint">Zone name</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="geofencing_zone">Geofencing zone</string>
+    
+    <!-- Zone Editing -->
+    <string name="edit_zone_radius">Edit radius</string>
+    <string name="edit_zone_name">Edit name</string>
+    <string name="zone_radius">Radius: %1$d m</string>
+    <string name="save">Save</string>
+    <string name="drag_to_resize">Drag to resize</string>
+    <string name="zone_updated">Zone updated</string>
+    <string name="min_radius">50m</string>
+    <string name="max_radius">1000m</string>
+    <string name="rename_zone">Rename zone</string>
+    <string name="new_zone_name">New zone name</string>
+    <string name="zone_details">Zone Details</string>
+    <string name="zone_actions">Actions</string>
+    <string name="close">Close</string>
+    
+    <!-- Zone Deletion -->
+    <string name="delete_zone">Delete zone</string>
+    <string name="confirm_delete_title">Confirm deletion</string>
+    <string name="confirm_delete_message">Are you sure you want to delete the zone \"%1$s\"?</string>
+    <string name="zone_deleted">Zone deleted</string>
+</resources> 

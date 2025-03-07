@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Corps principal du poisson -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30C38,30 25,42 25,54C25,66 38,78 54,78C70,78 83,66 83,54C83,42 70,30 54,30Z"/>
+    
+    <!-- Yeux -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M45,48C45,45.79 43.21,44 41,44C38.79,44 37,45.79 37,48C37,50.21 38.79,52 41,52C43.21,52 45,50.21 45,48Z"/>
+    <path
+        android:fillColor="#000000"
+        android:pathData="M71,48C71,45.79 69.21,44 67,44C64.79,44 63,45.79 63,48C63,50.21 64.79,52 67,52C69.21,52 71,50.21 71,48Z"/>
+    
+    <!-- Reflets dans les yeux -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,46C42,45.45 41.55,45 41,45C40.45,45 40,45.45 40,46C40,46.55 40.45,47 41,47C41.55,47 42,46.55 42,46Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,46C68,45.45 67.55,45 67,45C66.45,45 66,45.45 66,46C66,46.55 66.45,47 67,47C67.55,47 68,46.55 68,46Z"/>
+    
+    <!-- Bouche -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M54,58C50,58 47,60 47,63C47,66 50,68 54,68C58,68 61,66 61,63C61,60 58,58 54,58Z"/>
+    
+    <!-- Épines -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:pathData="M25,54L20,52M25,54L20,54M25,54L20,56"/>
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:pathData="M83,54L88,52M83,54L88,54M83,54L88,56"/>
+</vector> 

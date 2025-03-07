@@ -42,4 +42,7 @@
     <string name="zone_deleted">Zone deleted</string>
     <string name="loading_address">Loading address...</string>
     <string name="error_loading_address">Error loading address</string>
+    <string name="zones_list">Zones List</string>
+    <string name="no_zones">No zones have been created</string>
+    <string name="open_zones_list">Open zones list</string>
 </resources> 

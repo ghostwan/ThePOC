@@ -40,4 +40,6 @@
     <string name="confirm_delete_title">Confirmer la suppression</string>
     <string name="confirm_delete_message">Êtes-vous sûr de vouloir supprimer la zone \"%1$s\" ?</string>
     <string name="zone_deleted">Zone supprimée</string>
+    <string name="loading_address">Chargement de l\'adresse...</string>
+    <string name="error_loading_address">Erreur lors du chargement de l\'adresse</string>
 </resources> 

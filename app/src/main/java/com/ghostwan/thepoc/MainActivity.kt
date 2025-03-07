@@ -40,6 +40,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import android.location.Geocoder
+import java.util.Locale
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -115,6 +117,8 @@ fun MapScreen(
     var editingRadius by remember { mutableStateOf(GEOFENCE_RADIUS) }
     var showDeleteConfirmation by remember { mutableStateOf<GeofenceData?>(null) }
     var showRenameDialog by remember { mutableStateOf<GeofenceData?>(null) }
+    var isLoadingAddress by remember { mutableStateOf(false) }
+    var zoneName by remember { mutableStateOf("") }
 
     // Charger les geofences depuis la base de données
     LaunchedEffect(Unit) {
@@ -162,6 +166,48 @@ fun MapScreen(
                 context.getString(R.string.location_permission_required),
                 Toast.LENGTH_LONG
             ).show()
+        }
+    }
+
+    // Fonction pour obtenir l'adresse à partir des coordonnées
+    fun getAddressFromLocation(latLng: LatLng, onAddressReceived: (String) -> Unit) {
+        isLoadingAddress = true
+        val geocoder = Geocoder(context, Locale.getDefault())
+        
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1) { addresses ->
+                    val address = addresses.firstOrNull()?.let { addr ->
+                        when {
+                            addr.thoroughfare != null -> addr.thoroughfare
+                            addr.subLocality != null -> addr.subLocality
+                            addr.locality != null -> addr.locality
+                            else -> "%.2f, %.2f".format(latLng.latitude, latLng.longitude)
+                        }
+                    } ?: "%.2f, %.2f".format(latLng.latitude, latLng.longitude)
+                    
+                    onAddressReceived(address)
+                    isLoadingAddress = false
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+                val address = addresses?.firstOrNull()?.let { addr ->
+                    when {
+                        addr.thoroughfare != null -> addr.thoroughfare
+                        addr.subLocality != null -> addr.subLocality
+                        addr.locality != null -> addr.locality
+                        else -> "%.2f, %.2f".format(latLng.latitude, latLng.longitude)
+                    }
+                } ?: "%.2f, %.2f".format(latLng.latitude, latLng.longitude)
+                
+                onAddressReceived(address)
+                isLoadingAddress = false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting address", e)
+            onAddressReceived("%.2f, %.2f".format(latLng.latitude, latLng.longitude))
+            isLoadingAddress = false
         }
     }
 
@@ -355,7 +401,10 @@ fun MapScreen(
             },
             onMapClick = { latLng ->
                 if (isAddingGeofence) {
-                    showNameDialog = latLng
+                    getAddressFromLocation(latLng) { address ->
+                        showNameDialog = latLng
+                        zoneName = address
+                    }
                 } else {
                     selectedGeofence = null
                     isEditingRadius = false
@@ -363,7 +412,10 @@ fun MapScreen(
             },
             onMapLongClick = { latLng ->
                 if (hasLocationPermission) {
-                    showNameDialog = latLng
+                    getAddressFromLocation(latLng) { address ->
+                        showNameDialog = latLng
+                        zoneName = address
+                    }
                 } else {
                     val permissions = mutableListOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -648,6 +700,8 @@ fun MapScreen(
     // Dialogue pour nommer la zone
     if (showNameDialog != null) {
         ZoneNameDialog(
+            isLoading = isLoadingAddress,
+            initialValue = zoneName,
             onDismiss = { showNameDialog = null },
             onConfirm = { name ->
                 showNameDialog?.let { latLng ->
@@ -685,22 +739,31 @@ fun MapScreen(
 
 @Composable
 fun ZoneNameDialog(
+    isLoading: Boolean,
+    initialValue: String,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var zoneName by remember { mutableStateOf("") }
+    var zoneName by remember { mutableStateOf(initialValue) }
     
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.name_zone)) },
         text = {
-            OutlinedTextField(
-                value = zoneName,
-                onValueChange = { zoneName = it },
-                label = { Text(stringResource(R.string.zone_name_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                if (isLoading) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                OutlinedTextField(
+                    value = zoneName,
+                    onValueChange = { zoneName = it },
+                    label = { Text(stringResource(R.string.zone_name_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         confirmButton = {
             Button(

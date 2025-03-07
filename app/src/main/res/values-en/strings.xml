@@ -40,4 +40,6 @@
     <string name="confirm_delete_title">Confirm deletion</string>
     <string name="confirm_delete_message">Are you sure you want to delete the zone \"%1$s\"?</string>
     <string name="zone_deleted">Zone deleted</string>
+    <string name="loading_address">Loading address...</string>
+    <string name="error_loading_address">Error loading address</string>
 </resources> 

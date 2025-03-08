@@ -80,6 +80,10 @@ data class GeofenceData(
 class MainActivity : ComponentActivity() {
     private lateinit var geofencingClient: GeofencingClient
     private lateinit var database: AppDatabase
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var locationCallback: LocationCallback? = null
+    private var cameraPositionState: CameraPositionState? = null
+    
     private val geofencePendingIntent: PendingIntent by lazy {
         val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
         PendingIntent.getBroadcast(
@@ -93,14 +97,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         geofencingClient = LocationServices.getGeofencingClient(this)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         database = AppDatabase.getDatabase(this)
-        
-        try {
-            val status = MapsInitializer.initialize(applicationContext)
-            Log.d(TAG, "Maps initialized with status: $status")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing Maps: ${e.message}", e)
-        }
         
         setContent {
             MaterialTheme {
@@ -108,9 +106,86 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MapScreen(geofencingClient, geofencePendingIntent, database)
+                    val cameraState = rememberCameraPositionState {
+                        position = CameraPosition.fromLatLngZoom(
+                            LatLng(48.8566, 2.3522), // Centre de Paris par défaut
+                            12f
+                        )
+                    }
+                    cameraPositionState = cameraState
+                    MapScreen(geofencingClient, geofencePendingIntent, database, cameraState)
                 }
             }
+        }
+        
+        setupLocationUpdates()
+        
+        // Centrer sur la position actuelle au démarrage
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val latLng = LatLng(it.latitude, it.longitude)
+                    cameraPositionState?.animate(
+                        update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                        durationMs = 1000
+                    )
+                }
+            }
+        }
+        
+        try {
+            val status = MapsInitializer.initialize(applicationContext)
+            Log.d(TAG, "Maps initialized with status: $status")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing Maps: ${e.message}", e)
+        }
+    }
+
+    private fun setupLocationUpdates() {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+            .setWaitForAccurateLocation(false)
+            .setMinUpdateIntervalMillis(3000)
+            .setMaxUpdateDelayMillis(5000)
+            .build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    Log.d(TAG, "Location update: ${location.latitude}, ${location.longitude}")
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    cameraPositionState?.let { camera ->
+                        lifecycleScope.launch {
+                            camera.animate(
+                                update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                                durationMs = 1000
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback!!,
+                mainLooper
+            )
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        locationCallback?.let { callback ->
+            fusedLocationClient.removeLocationUpdates(callback)
         }
     }
 }
@@ -120,15 +195,13 @@ class MainActivity : ComponentActivity() {
 fun MapScreen(
     geofencingClient: GeofencingClient,
     geofencePendingIntent: PendingIntent,
-    database: AppDatabase
+    database: AppDatabase,
+    cameraPositionState: CameraPositionState
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val paris = LatLng(48.8566, 2.3522)
-    val cameraPositionState = rememberCameraPositionState {
-        this.position = CameraPosition.fromLatLngZoom(paris, 12f)
-    }
 
     var isMapLoaded by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -495,13 +568,16 @@ fun MapScreen(
         modifier = Modifier.fillMaxSize(),
                         cameraPositionState = cameraPositionState,
                         uiSettings = MapUiSettings(
-                            myLocationButtonEnabled = false,
+                            myLocationButtonEnabled = true,
                             rotationGesturesEnabled = true,
                             tiltGesturesEnabled = true,
                             zoomControlsEnabled = false,
                             zoomGesturesEnabled = true
                         ),
-                        properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
+                        properties = MapProperties(
+                            isMyLocationEnabled = hasLocationPermission,
+                            isMapsToolbarEnabled = true
+                        ),
                         onMapLoaded = {
                             isMapLoaded = true
                         },

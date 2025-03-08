@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.devtools.ksp' version '1.9.0-1.0.13'
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.appdistribution'
 }
 
 def localProperties = new Properties()
@@ -15,8 +17,8 @@ android {
         applicationId "com.ghostwan.thepoc"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode project.findProperty('VERSION_CODE').toInteger()
+        versionName project.findProperty('VERSION_NAME')
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -41,6 +43,20 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            firebaseAppDistribution {
+                artifactType = "APK"
+                groups = "Netatmo"
+                releaseNotes = "Version de test"
+            }
+        }
+        
+        debug {
+            firebaseAppDistribution {
+                artifactType = "APK"
+                groups = "Netatmo"
+                releaseNotes = "Version de test (debug)"
+            }
         }
     }
     compileOptions {
@@ -81,6 +97,7 @@ dependencies {
     implementation 'androidx.room:room-ktx:2.6.1'
     ksp 'androidx.room:room-compiler:2.6.1'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3"
+    implementation "com.google.accompanist:accompanist-systemuicontroller:0.32.0"
     
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
@@ -89,4 +106,9 @@ dependencies {
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
+
+    // Firebase
+    implementation platform('com.google.firebase:firebase-bom:32.7.2')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-appdistribution-api:16.0.0-beta11'
 } 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "57329492167",
+    "project_id": "thepoc-c070e",
+    "storage_bucket": "thepoc-c070e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:57329492167:android:257d6547144d095bd81ee2",
+        "android_client_info": {
+          "package_name": "com.ghostwan.thepoc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNWBQlbHC-D276qRnJtyRBh5gvRmzszbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

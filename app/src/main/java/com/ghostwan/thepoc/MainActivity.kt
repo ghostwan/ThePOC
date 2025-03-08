@@ -15,6 +15,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -65,6 +66,7 @@ import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.compose.material.icons.filled.LocationSearching
 import kotlin.math.abs
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -105,6 +107,18 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             MaterialTheme {
+                val systemUiController = rememberSystemUiController()
+                val useDarkIcons = !isSystemInDarkTheme()
+                val backgroundColor = MaterialTheme.colorScheme.surface
+
+                DisposableEffect(systemUiController, useDarkIcons) {
+                    systemUiController.setSystemBarsColor(
+                        color = backgroundColor,
+                        darkIcons = useDarkIcons
+                    )
+                    onDispose {}
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

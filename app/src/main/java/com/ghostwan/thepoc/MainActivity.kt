@@ -670,9 +670,11 @@ fun MapScreen(
                                 } else if (movingGeofence != null) {
                                     moveGeofence(movingGeofence!!, latLng)
                                     movingGeofence = null
+                                    editingRadius = GEOFENCE_RADIUS
                                 } else {
                                     selectedGeofence = null
                                     isEditingRadius = false
+                                    editingRadius = GEOFENCE_RADIUS
                                 }
                             }
                         ) {
@@ -854,6 +856,7 @@ fun MapScreen(
                                             onClick = {
                                                 updateGeofenceRadius(geofence, editingRadius)
                                                 isEditingRadius = false
+                                                selectedGeofence = selectedGeofence?.copy(radius = editingRadius)
                                             },
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
@@ -906,6 +909,7 @@ fun MapScreen(
                                                     movingGeofence = geofence
                                                     selectedGeofence = null
                                                     isEditingRadius = false
+                                                    editingRadius = GEOFENCE_RADIUS
                                                     Toast.makeText(
                                                         context,
                                                         context.getString(R.string.tap_to_move_zone),

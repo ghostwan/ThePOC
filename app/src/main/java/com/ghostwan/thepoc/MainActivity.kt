@@ -67,6 +67,13 @@ import androidx.core.app.ActivityCompat
 import androidx.compose.material.icons.filled.LocationSearching
 import kotlin.math.abs
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import androidx.compose.material.icons.filled.Search
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -88,6 +95,7 @@ class MainActivity : ComponentActivity() {
     private var locationCallback: LocationCallback? = null
     private var cameraPositionState: CameraPositionState? = null
     var isLocationTrackingEnabled = false
+    lateinit var placesClient: PlacesClient
     
     private val geofencePendingIntent: PendingIntent by lazy {
         val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
@@ -104,6 +112,9 @@ class MainActivity : ComponentActivity() {
         geofencingClient = LocationServices.getGeofencingClient(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         database = AppDatabase.getDatabase(this)
+        
+        Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY)
+        placesClient = Places.createClient(this)
         
         setContent {
             MaterialTheme {
@@ -238,6 +249,8 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val paris = LatLng(48.8566, 2.3522)
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearching by remember { mutableStateOf(false) }
 
     var isMapLoaded by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -713,8 +726,8 @@ fun MapScreen(
                 0 -> {
                     // Contenu de la carte
                     Box(modifier = Modifier.fillMaxSize()) {
-    GoogleMap(
-        modifier = Modifier.fillMaxSize(),
+                        GoogleMap(
+                            modifier = Modifier.fillMaxSize(),
                             cameraPositionState = cameraPositionState,
                             uiSettings = MapUiSettings(
                                 myLocationButtonEnabled = false,
@@ -748,7 +761,7 @@ fun MapScreen(
                         ) {
                             // Afficher les zones existantes
                             geofences.forEach { geofence ->
-        Marker(
+                                Marker(
                                     state = MarkerState(position = geofence.latLng),
                                     title = geofence.name,
                                     snippet = context.getString(R.string.geofencing_zone),
@@ -786,6 +799,76 @@ fun MapScreen(
                                     )
                                 }
                             }
+                        }
+
+                        // Barre de recherche
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .align(Alignment.TopCenter),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                        ) {
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { newValue ->
+                                    searchQuery = newValue
+                                    if (newValue.length >= 3) {
+                                        scope.launch {
+                                            isSearching = true
+                                            try {
+                                                val request = FindAutocompletePredictionsRequest.builder()
+                                                    .setQuery(newValue)
+                                                    .build()
+                                                
+                                                (context as? MainActivity)?.placesClient?.findAutocompletePredictions(request)
+                                                    ?.addOnSuccessListener { response ->
+                                                        val prediction = response.autocompletePredictions.firstOrNull()
+                                                        prediction?.let {
+                                                            val placeFields = listOf(Place.Field.LAT_LNG)
+                                                            val placeRequest = FetchPlaceRequest.builder(it.placeId, placeFields).build()
+                                                            
+                                                            (context as? MainActivity)?.placesClient?.fetchPlace(placeRequest)
+                                                                ?.addOnSuccessListener { placeResponse ->
+                                                                    placeResponse.place.latLng?.let { latLng ->
+                                                                        scope.launch {
+                                                                            cameraPositionState.animate(
+                                                                                update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                                                                                durationMs = 1000
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }
+                                                        }
+                                                    }
+                                                    ?.addOnFailureListener { exception ->
+                                                        Log.e(TAG, "Place prediction failed: ${exception.message}")
+                                                    }
+                                            } finally {
+                                                isSearching = false
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                placeholder = { Text("Rechercher un lieu...") },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Rechercher") },
+                                trailingIcon = {
+                                    if (isSearching) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                },
+                                singleLine = true,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
+                            )
                         }
 
                         // Boutons flottants

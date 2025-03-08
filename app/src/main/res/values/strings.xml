@@ -4,15 +4,17 @@
     
     <!-- Permissions -->
     <string name="location_permission_required">Permissions de localisation requises</string>
-    <string name="location_permission_explanation">Pour utiliser le géofencing, l\'application a besoin d\'accéder à votre position. Veuillez activer les permissions de localisation dans les paramètres.</string>
+    <string name="location_permission_explanation">Pour utiliser le géofencing, l\'application a besoin d\'accéder à votre position. Veuillez autoriser l\'accès à la localisation.</string>
+    <string name="background_location_permission_explanation">Pour détecter les zones en arrière-plan, l\'application a besoin d\'accéder à votre position même lorsque l\'application est fermée. Veuillez autoriser l\'accès à la localisation en arrière-plan.</string>
     <string name="open_settings">Ouvrir les paramètres</string>
+    <string name="grant_permission">Autoriser</string>
     
     <!-- Map Screen -->
     <string name="add_zone">Ajouter une zone</string>
     <string name="my_location">Ma position</string>
     <string name="click_to_add_zone">Cliquez sur la carte pour ajouter une zone ou faites un appui long</string>
     <string name="zone_added_success">Zone ajoutée avec succès</string>
-    <string name="error_adding_zone">Erreur lors de l\'ajout de la zone: %1$s</string>
+    <string name="error_adding_zone">Erreur lors de l\'ajout de la zone : %1$s</string>
     <string name="missing_location_permission">Permission de localisation manquante</string>
     
     <!-- Zone Dialog -->

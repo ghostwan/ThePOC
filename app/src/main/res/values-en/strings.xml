@@ -3,12 +3,16 @@
     <string name="app_name">ThePOC</string>
     
     <!-- Permissions -->
-    <string name="location_permission_required">Location permissions are required for geofencing</string>
+    <string name="location_permission_required">Location permissions required</string>
+    <string name="location_permission_explanation">To use geofencing, the app needs access to your location. Please allow location access.</string>
+    <string name="background_location_permission_explanation">To detect zones in the background, the app needs access to your location even when the app is closed. Please allow background location access.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="grant_permission">Allow</string>
     
     <!-- Map Screen -->
     <string name="add_zone">Add zone</string>
     <string name="my_location">My location</string>
-    <string name="click_to_add_zone">Click on the map or long press to add a zone</string>
+    <string name="click_to_add_zone">Click on the map to add a zone or long press</string>
     <string name="zone_added_success">Zone added successfully</string>
     <string name="error_adding_zone">Error adding zone: %1$s</string>
     <string name="missing_location_permission">Missing location permission</string>
@@ -31,18 +35,18 @@
     <string name="max_radius">1000m</string>
     <string name="rename_zone">Rename zone</string>
     <string name="new_zone_name">New zone name</string>
-    <string name="zone_details">Zone Details</string>
+    <string name="zone_details">Zone details</string>
     <string name="zone_actions">Actions</string>
     <string name="close">Close</string>
     
     <!-- Zone Deletion -->
     <string name="delete_zone">Delete zone</string>
     <string name="confirm_delete_title">Confirm deletion</string>
-    <string name="confirm_delete_message">Are you sure you want to delete the zone \"%1$s\"?</string>
+    <string name="confirm_delete_message">Are you sure you want to delete zone \"%1$s\"?</string>
     <string name="zone_deleted">Zone deleted</string>
     <string name="loading_address">Loading address...</string>
     <string name="error_loading_address">Error loading address</string>
-    <string name="zones_list">Zones List</string>
-    <string name="no_zones">No zones have been created</string>
+    <string name="zones_list">Zones list</string>
+    <string name="no_zones">No zones created</string>
     <string name="open_zones_list">Open zones list</string>
 </resources> 

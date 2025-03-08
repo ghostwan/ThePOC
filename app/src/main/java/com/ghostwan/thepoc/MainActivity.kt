@@ -1,6 +1,7 @@
 package com.ghostwan.thepoc
 
 import android.Manifest
+import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -61,6 +62,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import android.provider.Settings
+import androidx.core.app.ActivityCompat
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -155,6 +157,7 @@ fun MapScreen(
         )
     }
     var showPermissionDialog by remember { mutableStateOf(false) }
+    var shouldShowBackgroundPermissionDialog by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -168,8 +171,47 @@ fun MapScreen(
         
         hasLocationPermission = hasFineLocation && hasBackgroundLocation
         
-        if (!hasLocationPermission) {
-            showPermissionDialog = true
+        if (!hasFineLocation) {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as Activity,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            ) {
+                // L'utilisateur a coché "Ne plus demander"
+                showPermissionDialog = true
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundLocation) {
+            shouldShowBackgroundPermissionDialog = true
+        }
+    }
+
+    val backgroundPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            hasLocationPermission = true
+        } else {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as Activity,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                )
+            ) {
+                showPermissionDialog = true
+            }
+        }
+    }
+
+    fun requestLocationPermissions() {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        permissionLauncher.launch(permissions.toTypedArray())
+    }
+
+    fun requestBackgroundLocationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         }
     }
 
@@ -469,14 +511,7 @@ fun MapScreen(
                                     zoneName = address
                                 }
                             } else {
-                                val permissions = mutableListOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                                }
-                                permissionLauncher.launch(permissions.toTypedArray())
+                                requestLocationPermissions()
                             }
                         }
                     ) {
@@ -536,14 +571,7 @@ fun MapScreen(
                         SmallFloatingActionButton(
                             onClick = {
                                 if (!hasLocationPermission) {
-                                    val permissions = mutableListOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    )
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                        permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                                    }
-                                    permissionLauncher.launch(permissions.toTypedArray())
+                                    requestLocationPermissions()
                                 } else {
                                     isAddingGeofence = !isAddingGeofence
                                     if (isAddingGeofence) {
@@ -567,14 +595,7 @@ fun MapScreen(
                         SmallFloatingActionButton(
                             onClick = {
                                 if (!hasLocationPermission) {
-                                    val permissions = mutableListOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    )
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                        permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                                    }
-                                    permissionLauncher.launch(permissions.toTypedArray())
+                                    requestLocationPermissions()
                                 } else {
                                     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                                     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
@@ -829,6 +850,27 @@ fun MapScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showPermissionDialog = false }) {
+                    Text(context.getString(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (shouldShowBackgroundPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { shouldShowBackgroundPermissionDialog = false },
+            title = { Text(context.getString(R.string.location_permission_required)) },
+            text = { Text(context.getString(R.string.background_location_permission_explanation)) },
+            confirmButton = {
+                Button(onClick = {
+                    requestBackgroundLocationPermission()
+                    shouldShowBackgroundPermissionDialog = false
+                }) {
+                    Text(context.getString(R.string.grant_permission))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { shouldShowBackgroundPermissionDialog = false }) {
                     Text(context.getString(R.string.cancel))
                 }
             }

@@ -153,6 +153,11 @@ fun MapScreen(
                     ContextCompat.checkSelfPermission(
                         context,
                         Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED) &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED)
         )
     }
@@ -168,8 +173,13 @@ fun MapScreen(
         } else {
             true
         }
+        val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions[Manifest.permission.POST_NOTIFICATIONS] == true
+        } else {
+            true
+        }
         
-        hasLocationPermission = hasFineLocation && hasBackgroundLocation
+        hasLocationPermission = hasFineLocation && hasBackgroundLocation && hasNotificationPermission
         
         if (!hasFineLocation) {
             if (!ActivityCompat.shouldShowRequestPermissionRationale(
@@ -177,7 +187,6 @@ fun MapScreen(
                     Manifest.permission.ACCESS_FINE_LOCATION
                 )
             ) {
-                // L'utilisateur a coché "Ne plus demander"
                 showPermissionDialog = true
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundLocation) {
@@ -206,6 +215,9 @@ fun MapScreen(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
         permissionLauncher.launch(permissions.toTypedArray())
     }
 
@@ -479,8 +491,8 @@ fun MapScreen(
             when (selectedTab) {
                 0 -> {
                     // Contenu de la carte
-                    GoogleMap(
-                        modifier = Modifier.fillMaxSize(),
+    GoogleMap(
+        modifier = Modifier.fillMaxSize(),
                         cameraPositionState = cameraPositionState,
                         uiSettings = MapUiSettings(
                             myLocationButtonEnabled = false,
@@ -517,7 +529,7 @@ fun MapScreen(
                     ) {
                         // Afficher les zones existantes
                         geofences.forEach { geofence ->
-                            Marker(
+        Marker(
                                 state = MarkerState(position = geofence.latLng),
                                 title = geofence.name,
                                 snippet = context.getString(R.string.geofencing_zone),

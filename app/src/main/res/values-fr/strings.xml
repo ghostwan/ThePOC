@@ -66,8 +66,8 @@
     <!-- Timeline -->
     <string name="tab_timeline">Chronologie</string>
     <string name="timeline_empty">Aucun événement enregistré</string>
-    <string name="event_enter">Entrée dans la zone %1$s</string>
-    <string name="event_exit">Sortie de la zone %1$s</string>
+    <string name="event_enter">Entrée dans la zone</string>
+    <string name="event_exit">Sortie de la zone</string>
     <string name="event_time">à %1$s</string>
     <string name="event_location">Position : %1$f, %2$f</string>
     <string name="clear_timeline">Effacer l\'historique</string>

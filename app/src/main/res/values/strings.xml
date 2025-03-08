@@ -66,8 +66,8 @@
     
     <!-- Timeline -->
     <string name="timeline_empty">No events recorded yet</string>
-    <string name="event_enter">Entered zone %1$s</string>
-    <string name="event_exit">Left zone %1$s</string>
+    <string name="event_enter">Entered zone</string>
+    <string name="event_exit">Left zone</string>
     <string name="event_time">at %1$s</string>
     <string name="event_location">Location: %1$f, %2$f</string>
     <string name="clear_timeline">Clear Timeline</string>

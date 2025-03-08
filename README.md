@@ -21,6 +21,10 @@ I am strictly limiting myself to modifying files, including this README, only wh
 
 ### Manual intervention
 
+- `07/03/2025` : It was looping, unable to read the Maps API key. It reformatted the code, then incorrectly tried to read the key from local.properties in assets. Due to build failures, it made many activity changes. I had to implement BuildConfig
+- `07/03/2025` : Swipe-to-delete was implemented, but the event deletion function was missing and unfixable. I resorted to a rhetorical question to get it to create the function.
+- `08/03/2025 23h45` : In an attempt to enhance the search bar, the buttons were deleted. As Cursor had difficulty restoring them, I manually reverted the code to a prior commit.
+
 ## Goefencing App 
 
 The main goal of this application is to:

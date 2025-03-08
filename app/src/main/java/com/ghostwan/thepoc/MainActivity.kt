@@ -63,6 +63,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
+import androidx.compose.material.icons.filled.LocationSearching
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -763,20 +764,22 @@ fun MapScreen(
                             FloatingActionButton(
                                 onClick = {
                                     if (context is MainActivity) {
+                                        isLocationTrackingEnabled = true
                                         context.centerOnCurrentLocation(cameraPositionState)
                                     }
                                 },
-                                containerColor = if (isLocationTrackingEnabled) 
-                                    MaterialTheme.colorScheme.primaryContainer 
-                                else 
-                                    MaterialTheme.colorScheme.surface
+                                containerColor = MaterialTheme.colorScheme.surface
                             ) {
                                 Icon(
                                     imageVector = if (isLocationTrackingEnabled) 
                                         Icons.Default.MyLocation 
                                     else 
-                                        Icons.Default.LocationOn,
-                                    contentDescription = stringResource(R.string.my_location)
+                                        Icons.Default.LocationSearching,
+                                    contentDescription = stringResource(R.string.my_location),
+                                    tint = if (isLocationTrackingEnabled)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface
                                 )
                             }
 

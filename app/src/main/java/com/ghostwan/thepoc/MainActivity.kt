@@ -74,6 +74,9 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.SearchBar
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -686,13 +689,134 @@ fun MapScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            var showSearch by remember { mutableStateOf(false) }
+            var searchQuery by remember { mutableStateOf("") }
+            var isSearching by remember { mutableStateOf(false) }
+            var predictions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+            
+            if (showSearch) {
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { newQuery ->
+                        searchQuery = newQuery
+                        if (newQuery.length >= 3) {
+                            scope.launch {
+                                isSearching = true
+                                try {
+                                    val request = FindAutocompletePredictionsRequest.builder()
+                                        .setQuery(newQuery)
+                                        .build()
+                                    
+                                    (context as? MainActivity)?.placesClient?.findAutocompletePredictions(request)
+                                        ?.addOnSuccessListener { response ->
+                                            predictions = response.autocompletePredictions
+                                        }
+                                        ?.addOnFailureListener { exception ->
+                                            Log.e(TAG, "Place prediction failed: ${exception.message}")
+                                            predictions = emptyList()
+                                        }
+                                } finally {
+                                    isSearching = false
+                                }
+                            }
+                        } else {
+                            predictions = emptyList()
+                        }
+                    },
+                    onSearch = {
+                        if (searchQuery.isNotEmpty() && predictions.isNotEmpty()) {
+                            val prediction = predictions.first()
+                            val placeFields = listOf(Place.Field.LAT_LNG)
+                            val placeRequest = FetchPlaceRequest.builder(prediction.placeId, placeFields).build()
+                            
+                            (context as? MainActivity)?.placesClient?.fetchPlace(placeRequest)
+                                ?.addOnSuccessListener { placeResponse ->
+                                    placeResponse.place.latLng?.let { latLng ->
+                                        scope.launch {
+                                            cameraPositionState.animate(
+                                                update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                                                durationMs = 1000
+                                            )
+                                        }
+                                        showSearch = false
+                                        searchQuery = ""
+                                        predictions = emptyList()
+                                    }
+                                }
+                        }
+                    },
+                    active = showSearch,
+                    onActiveChange = { showSearch = it },
+                    placeholder = { Text("Rechercher un lieu...") },
+                    leadingIcon = { 
+                        IconButton(onClick = { 
+                            showSearch = false
+                            searchQuery = ""
+                            predictions = emptyList()
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
+                        }
+                    },
+                    trailingIcon = {
+                        if (isSearching) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { 
+                                searchQuery = ""
+                                predictions = emptyList()
+                            }) {
+                                Icon(Icons.Default.Close, contentDescription = "Effacer")
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    predictions.forEach { prediction ->
+                        ListItem(
+                            headlineContent = { Text(prediction.getPrimaryText(null).toString()) },
+                            supportingContent = { Text(prediction.getSecondaryText(null).toString()) },
+                            modifier = Modifier.clickable {
+                                val placeFields = listOf(Place.Field.LAT_LNG)
+                                val placeRequest = FetchPlaceRequest.builder(prediction.placeId, placeFields).build()
+                                
+                                (context as? MainActivity)?.placesClient?.fetchPlace(placeRequest)
+                                    ?.addOnSuccessListener { placeResponse ->
+                                        placeResponse.place.latLng?.let { latLng ->
+                                            scope.launch {
+                                                cameraPositionState.animate(
+                                                    update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                                                    durationMs = 1000
+                                                )
+                                            }
+                                            showSearch = false
+                                            searchQuery = ""
+                                            predictions = emptyList()
+                                        }
+                                    }
+                            }
+                        )
+                    }
+                }
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.app_name)) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    actions = {
+                        IconButton(onClick = { showSearch = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Rechercher"
+                            )
+                        }
+                    }
                 )
-            )
+            }
         },
         bottomBar = {
             NavigationBar {
@@ -726,8 +850,8 @@ fun MapScreen(
                 0 -> {
                     // Contenu de la carte
                     Box(modifier = Modifier.fillMaxSize()) {
-                        GoogleMap(
-                            modifier = Modifier.fillMaxSize(),
+    GoogleMap(
+        modifier = Modifier.fillMaxSize(),
                             cameraPositionState = cameraPositionState,
                             uiSettings = MapUiSettings(
                                 myLocationButtonEnabled = false,
@@ -761,7 +885,7 @@ fun MapScreen(
                         ) {
                             // Afficher les zones existantes
                             geofences.forEach { geofence ->
-                                Marker(
+        Marker(
                                     state = MarkerState(position = geofence.latLng),
                                     title = geofence.name,
                                     snippet = context.getString(R.string.geofencing_zone),
@@ -798,120 +922,6 @@ fun MapScreen(
                                         fillColor = Color.Transparent
                                     )
                                 }
-                            }
-                        }
-
-                        // Barre de recherche
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                                .align(Alignment.TopCenter),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-                        ) {
-                            TextField(
-                                value = searchQuery,
-                                onValueChange = { newValue ->
-                                    searchQuery = newValue
-                                    if (newValue.length >= 3) {
-                                        scope.launch {
-                                            isSearching = true
-                                            try {
-                                                val request = FindAutocompletePredictionsRequest.builder()
-                                                    .setQuery(newValue)
-                                                    .build()
-                                                
-                                                (context as? MainActivity)?.placesClient?.findAutocompletePredictions(request)
-                                                    ?.addOnSuccessListener { response ->
-                                                        val prediction = response.autocompletePredictions.firstOrNull()
-                                                        prediction?.let {
-                                                            val placeFields = listOf(Place.Field.LAT_LNG)
-                                                            val placeRequest = FetchPlaceRequest.builder(it.placeId, placeFields).build()
-                                                            
-                                                            (context as? MainActivity)?.placesClient?.fetchPlace(placeRequest)
-                                                                ?.addOnSuccessListener { placeResponse ->
-                                                                    placeResponse.place.latLng?.let { latLng ->
-                                                                        scope.launch {
-                                                                            cameraPositionState.animate(
-                                                                                update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
-                                                                                durationMs = 1000
-                                                                            )
-                                                                        }
-                                                                    }
-                                                                }
-                                                        }
-                                                    }
-                                                    ?.addOnFailureListener { exception ->
-                                                        Log.e(TAG, "Place prediction failed: ${exception.message}")
-                                                    }
-                                            } finally {
-                                                isSearching = false
-                                            }
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                placeholder = { Text("Rechercher un lieu...") },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Rechercher") },
-                                trailingIcon = {
-                                    if (isSearching) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(24.dp),
-                                            strokeWidth = 2.dp
-                                        )
-                                    }
-                                },
-                                singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                )
-                            )
-                        }
-
-                        // Boutons flottants
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(16.dp)
-                                .padding(bottom = 72.dp)
-                        ) {
-                            FloatingActionButton(
-                                onClick = {
-                                    if (context is MainActivity) {
-                                        context.centerOnCurrentLocation(cameraPositionState)
-                                    }
-                                },
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ) {
-                                Icon(
-                                    imageVector = if (isLocationCentered) 
-                                        Icons.Default.MyLocation 
-                                    else 
-                                        Icons.Default.LocationSearching,
-                                    contentDescription = stringResource(R.string.my_location),
-                                    tint = if (isLocationCentered)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            FloatingActionButton(
-                                onClick = { isAddingGeofence = !isAddingGeofence },
-                                containerColor = if (isAddingGeofence) 
-                                    MaterialTheme.colorScheme.primaryContainer 
-                                else 
-                                    MaterialTheme.colorScheme.surface
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = stringResource(R.string.add_zone)
-                                )
                             }
                         }
                     }

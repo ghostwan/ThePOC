@@ -129,10 +129,12 @@ class MainActivity : ComponentActivity() {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 location?.let {
                     val latLng = LatLng(it.latitude, it.longitude)
-                    cameraPositionState?.animate(
-                        update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
-                        durationMs = 1000
-                    )
+                    lifecycleScope.launch {
+                        cameraPositionState?.animate(
+                            update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                            durationMs = 1000
+                        )
+                    }
                 }
             }
         }
@@ -575,8 +577,7 @@ fun MapScreen(
                             zoomGesturesEnabled = true
                         ),
                         properties = MapProperties(
-                            isMyLocationEnabled = hasLocationPermission,
-                            isMapsToolbarEnabled = true
+                            isMyLocationEnabled = hasLocationPermission
                         ),
                         onMapLoaded = {
                             isMapLoaded = true

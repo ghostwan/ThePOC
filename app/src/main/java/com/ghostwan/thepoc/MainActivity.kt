@@ -83,6 +83,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationCallback: LocationCallback? = null
     private var cameraPositionState: CameraPositionState? = null
+    var isLocationTrackingEnabled = false
     
     private val geofencePendingIntent: PendingIntent by lazy {
         val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
@@ -159,12 +160,14 @@ class MainActivity : ComponentActivity() {
                 locationResult.lastLocation?.let { location ->
                     Log.d(TAG, "Location update: ${location.latitude}, ${location.longitude}")
                     val latLng = LatLng(location.latitude, location.longitude)
-                    cameraPositionState?.let { camera ->
-                        lifecycleScope.launch {
-                            camera.animate(
-                                update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
-                                durationMs = 1000
-                            )
+                    if (isLocationTrackingEnabled) {
+                        cameraPositionState?.let { camera ->
+                            lifecycleScope.launch {
+                                camera.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                                    durationMs = 1000
+                                )
+                            }
                         }
                     }
                 }
@@ -217,6 +220,7 @@ fun MapScreen(
     var showRenameDialog by remember { mutableStateOf<GeofenceData?>(null) }
     var isLoadingAddress by remember { mutableStateOf(false) }
     var zoneName by remember { mutableStateOf("") }
+    var isLocationTrackingEnabled by remember { mutableStateOf(false) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -572,72 +576,108 @@ fun MapScreen(
             when (selectedTab) {
                 0 -> {
                     // Contenu de la carte
+                    Box(modifier = Modifier.fillMaxSize()) {
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
-                        cameraPositionState = cameraPositionState,
-                        uiSettings = MapUiSettings(
-                            myLocationButtonEnabled = true,
-                            rotationGesturesEnabled = true,
-                            tiltGesturesEnabled = true,
-                            zoomControlsEnabled = false,
-                            zoomGesturesEnabled = true
-                        ),
-                        properties = MapProperties(
-                            isMyLocationEnabled = hasLocationPermission
-                        ),
-                        onMapLoaded = {
-                            isMapLoaded = true
-                        },
-                        onMapClick = { latLng ->
-                            if (isAddingGeofence) {
-                                getAddressFromLocation(latLng) { address ->
-                                    showNameDialog = latLng
-                                    zoneName = address
+                            cameraPositionState = cameraPositionState,
+                            uiSettings = MapUiSettings(
+                                myLocationButtonEnabled = false,
+                                rotationGesturesEnabled = true,
+                                tiltGesturesEnabled = true,
+                                zoomControlsEnabled = false,
+                                zoomGesturesEnabled = true
+                            ),
+                            properties = MapProperties(
+                                isMyLocationEnabled = hasLocationPermission
+                            ),
+                            onMapLoaded = {
+                                isMapLoaded = true
+                            },
+                            onMapClick = { latLng ->
+                                if (isAddingGeofence) {
+                                    getAddressFromLocation(latLng) { address ->
+                                        showNameDialog = latLng
+                                        zoneName = address
+                                    }
+                                } else {
+                                    selectedGeofence = null
+                                    isEditingRadius = false
                                 }
-                            } else {
-                                selectedGeofence = null
-                                isEditingRadius = false
                             }
-                        },
-                        onMapLongClick = { latLng ->
-                            if (hasLocationPermission) {
-                                getAddressFromLocation(latLng) { address ->
-                                    showNameDialog = latLng
-                                    zoneName = address
-                                }
-                            } else {
-                                requestLocationPermissions()
-                            }
-                        }
-                    ) {
-                        // Afficher les zones existantes
-                        geofences.forEach { geofence ->
+                        ) {
+                            // Afficher les zones existantes
+                            geofences.forEach { geofence ->
         Marker(
-                                state = MarkerState(position = geofence.latLng),
-                                title = geofence.name,
-                                snippet = context.getString(R.string.geofencing_zone),
-                                onClick = {
-                                    selectedGeofence = geofence
-                                    editingRadius = geofence.radius
-                                    true
-                                }
-                            )
-                            Circle(
-                                center = geofence.latLng,
-                                radius = geofence.radius.toDouble(),
-                                strokeWidth = 2f,
-                                strokeColor = if (geofence == selectedGeofence) Color.Red else Color.Blue,
-                                fillColor = if (geofence == selectedGeofence) 
-                                    Color.Red.copy(alpha = 0.3f) else Color.Blue.copy(alpha = 0.3f)
-                            )
-                            
-                            if (geofence == selectedGeofence && isEditingRadius) {
+                                    state = MarkerState(position = geofence.latLng),
+                                    title = geofence.name,
+                                    snippet = context.getString(R.string.geofencing_zone),
+                                    onClick = {
+                                        selectedGeofence = geofence
+                                        editingRadius = geofence.radius
+                                        true
+                                    }
+                                )
                                 Circle(
                                     center = geofence.latLng,
-                                    radius = editingRadius.toDouble(),
-                                    strokeWidth = 3f,
-                                    strokeColor = Color.Green,
-                                    fillColor = Color.Transparent
+                                    radius = geofence.radius.toDouble(),
+                                    strokeWidth = 2f,
+                                    strokeColor = if (geofence == selectedGeofence) Color.Red else Color.Blue,
+                                    fillColor = if (geofence == selectedGeofence) 
+                                        Color.Red.copy(alpha = 0.3f) else Color.Blue.copy(alpha = 0.3f)
+                                )
+                                
+                                if (geofence == selectedGeofence && isEditingRadius) {
+                                    Circle(
+                                        center = geofence.latLng,
+                                        radius = editingRadius.toDouble(),
+                                        strokeWidth = 3f,
+                                        strokeColor = Color.Green,
+                                        fillColor = Color.Transparent
+                                    )
+                                }
+                            }
+                        }
+
+                        // Boutons flottants
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(16.dp)
+                                .padding(bottom = 72.dp)
+                        ) {
+                            FloatingActionButton(
+                                onClick = {
+                                    isLocationTrackingEnabled = !isLocationTrackingEnabled
+                                    if (context is MainActivity) {
+                                        context.isLocationTrackingEnabled = isLocationTrackingEnabled
+                                    }
+                                },
+                                containerColor = if (isLocationTrackingEnabled) 
+                                    MaterialTheme.colorScheme.primaryContainer 
+                                else 
+                                    MaterialTheme.colorScheme.surface
+                            ) {
+                                Icon(
+                                    imageVector = if (isLocationTrackingEnabled) 
+                                        Icons.Default.MyLocation 
+                                    else 
+                                        Icons.Default.LocationOn,
+                                    contentDescription = stringResource(R.string.my_location)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            FloatingActionButton(
+                                onClick = { isAddingGeofence = !isAddingGeofence },
+                                containerColor = if (isAddingGeofence) 
+                                    MaterialTheme.colorScheme.primaryContainer 
+                                else 
+                                    MaterialTheme.colorScheme.surface
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = stringResource(R.string.add_zone)
                                 )
                             }
                         }
@@ -652,67 +692,6 @@ fun MapScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
-                        }
-                    }
-
-                    // Action buttons
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                            .navigationBarsPadding(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SmallFloatingActionButton(
-                            onClick = {
-                                if (!hasLocationPermission) {
-                                    requestLocationPermissions()
-                                } else {
-                                    isAddingGeofence = !isAddingGeofence
-                                    if (isAddingGeofence) {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.click_to_add_zone),
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                }
-                            },
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = context.getString(R.string.add_zone)
-                            )
-                        }
-
-                        SmallFloatingActionButton(
-                            onClick = {
-                                if (!hasLocationPermission) {
-                                    requestLocationPermissions()
-                                } else {
-                                    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                                        location?.let {
-                                            val currentLatLng = LatLng(it.latitude, it.longitude)
-                                            scope.launch {
-                                                cameraPositionState.animate(
-                                                    update = CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f),
-                                                    durationMs = 1000
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MyLocation,
-                                contentDescription = context.getString(R.string.my_location)
-                            )
                         }
                     }
 

@@ -12,6 +12,7 @@
     <!-- Map Screen -->
     <string name="add_zone">Add zone</string>
     <string name="my_location">My location</string>
+    <string name="location_tracking">Location tracking</string>
     <string name="click_to_add_zone">Click on the map to add a zone or long press</string>
     <string name="zone_added_success">Zone added successfully</string>
     <string name="error_adding_zone">Error adding zone: %1$s</string>

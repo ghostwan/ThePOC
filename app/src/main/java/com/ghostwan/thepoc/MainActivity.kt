@@ -547,13 +547,19 @@ fun MapScreen(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
                     icon = { Icon(Icons.Default.Place, contentDescription = stringResource(R.string.tab_map)) },
-                    label = { Text(stringResource(R.string.tab_map)) },
+                    label = { Text(stringResource(R.string.tab_map)) }
                 )
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                     icon = { Icon(Icons.Default.List, contentDescription = stringResource(R.string.tab_zones)) },
-                    label = { Text(stringResource(R.string.tab_zones)) },
+                    label = { Text(stringResource(R.string.tab_zones)) }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    icon = { Icon(Icons.Default.History, contentDescription = stringResource(R.string.tab_timeline)) },
+                    label = { Text(stringResource(R.string.tab_timeline)) }
                 )
             }
         }
@@ -878,6 +884,10 @@ fun MapScreen(
                             showDeleteConfirmation = zone
                         }
                     )
+                }
+                2 -> {
+                    // Timeline
+                    TimelineScreen(database)
                 }
             }
         }

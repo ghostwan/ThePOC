@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofenceStatusCodes
 import com.google.android.gms.location.GeofencingEvent
+import java.util.*
 
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
@@ -23,20 +24,32 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             return
         }
 
-        // Obtenir le type de transition
         val geofenceTransition = geofencingEvent.geofenceTransition
+        val isEntering = geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER
 
-        // Vérifier le type de transition
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER || 
             geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
             val triggeringGeofences = geofencingEvent.triggeringGeofences
+            val location = geofencingEvent.triggeringLocation
 
             triggeringGeofences?.forEach { geofence ->
-                sendNotification(
-                    context, 
-                    geofence.requestId, 
-                    geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER
+                // Enregistrer l'événement dans la timeline
+                val event = TimelineEvent(
+                    timestamp = Date(),
+                    zoneId = geofence.requestId,
+                    zoneName = geofence.requestId,
+                    eventType = if (isEntering) EventType.ENTER else EventType.EXIT,
+                    latitude = location?.latitude ?: 0.0,
+                    longitude = location?.longitude ?: 0.0
                 )
+
+                // Sauvegarder l'événement dans la base de données
+                val database = AppDatabase.getDatabase(context)
+                kotlinx.coroutines.runBlocking {
+                    database.timelineDao().insertEvent(event)
+                }
+
+                sendNotification(context, geofence.requestId, isEntering)
             }
         }
     }

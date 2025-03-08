@@ -53,6 +53,7 @@
     <!-- Tabs -->
     <string name="tab_map">Map</string>
     <string name="tab_zones">Zones</string>
+    <string name="tab_timeline">Timeline</string>
     
     <!-- Geofence Notifications -->
     <string name="geofence_channel_name">Geofencing</string>
@@ -60,4 +61,12 @@
     <string name="geofence_notification_title">Zone detected</string>
     <string name="geofence_enter_notification">You entered zone: %1$s</string>
     <string name="geofence_exit_notification">You left zone: %1$s</string>
+    
+    <!-- Timeline -->
+    <string name="timeline_empty">No events recorded yet</string>
+    <string name="event_enter">Entered zone %1$s</string>
+    <string name="event_exit">Left zone %1$s</string>
+    <string name="event_time">at %1$s</string>
+    <string name="event_location">Location: %1$f, %2$f</string>
+    <string name="clear_timeline">Clear Timeline</string>
 </resources> 

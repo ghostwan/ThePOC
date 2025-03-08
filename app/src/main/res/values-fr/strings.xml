@@ -60,4 +60,13 @@
     <string name="geofence_notification_title">Zone détectée</string>
     <string name="geofence_enter_notification">Vous êtes entré dans la zone : %1$s</string>
     <string name="geofence_exit_notification">Vous avez quitté la zone : %1$s</string>
+    
+    <!-- Timeline -->
+    <string name="tab_timeline">Chronologie</string>
+    <string name="timeline_empty">Aucun événement enregistré</string>
+    <string name="event_enter">Entrée dans la zone %1$s</string>
+    <string name="event_exit">Sortie de la zone %1$s</string>
+    <string name="event_time">à %1$s</string>
+    <string name="event_location">Position : %1$f, %2$f</string>
+    <string name="clear_timeline">Effacer l\'historique</string>
 </resources> 

@@ -680,7 +680,7 @@ fun MapScreen(
                         ) {
                             // Afficher les zones existantes
                             geofences.forEach { geofence ->
-    Marker(
+        Marker(
                                     state = MarkerState(position = geofence.latLng),
                                     title = geofence.name,
                                     snippet = context.getString(R.string.geofencing_zone),

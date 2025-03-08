@@ -892,6 +892,14 @@ fun MapScreen(
                                     isEditingRadius = false
                                     editingRadius = GEOFENCE_RADIUS
                                 }
+                            },
+                            onMapLongClick = { latLng ->
+                                if (!isAddingGeofence && movingGeofence == null) {
+                                    getAddressFromLocation(latLng) { address ->
+                                        showNameDialog = latLng
+                                        zoneName = address
+                                    }
+                                }
                             }
                         ) {
                             // Afficher les zones existantes

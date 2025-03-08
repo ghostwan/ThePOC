@@ -53,4 +53,11 @@
     <!-- Tabs -->
     <string name="tab_map">Map</string>
     <string name="tab_zones">Zones</string>
+    
+    <!-- Geofence Notifications -->
+    <string name="geofence_channel_name">Geofencing</string>
+    <string name="geofence_channel_description">Notifications de géofencing</string>
+    <string name="geofence_notification_title">Zone détectée</string>
+    <string name="geofence_enter_notification">Vous êtes entré dans la zone : %1$s</string>
+    <string name="geofence_exit_notification">Vous avez quitté la zone : %1$s</string>
 </resources> 

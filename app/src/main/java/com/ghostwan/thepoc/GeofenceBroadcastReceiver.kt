@@ -26,27 +26,32 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         // Obtenir le type de transition
         val geofenceTransition = geofencingEvent.geofenceTransition
 
-        // Vérifier si la transition est une entrée dans la zone
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+        // Vérifier le type de transition
+        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER || 
+            geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
             val triggeringGeofences = geofencingEvent.triggeringGeofences
 
             triggeringGeofences?.forEach { geofence ->
-                sendNotification(context, geofence.requestId)
+                sendNotification(
+                    context, 
+                    geofence.requestId, 
+                    geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER
+                )
             }
         }
     }
 
-    private fun sendNotification(context: Context, geofenceId: String) {
+    private fun sendNotification(context: Context, geofenceId: String, isEntering: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         // Créer le canal de notification pour Android 8.0 et supérieur
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Geofencing",
+                context.getString(R.string.geofence_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifications de géofencing"
+                description = context.getString(R.string.geofence_channel_description)
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -54,8 +59,13 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         // Construire la notification
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_map)
-            .setContentTitle("Zone détectée")
-            .setContentText("Vous êtes entré dans la zone : $geofenceId")
+            .setContentTitle(context.getString(R.string.geofence_notification_title))
+            .setContentText(
+                if (isEntering) 
+                    context.getString(R.string.geofence_enter_notification, geofenceId)
+                else 
+                    context.getString(R.string.geofence_exit_notification, geofenceId)
+            )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()

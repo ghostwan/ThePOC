@@ -49,4 +49,8 @@
     <string name="zones_list">Liste des zones</string>
     <string name="no_zones">Aucune zone n\'a été créée</string>
     <string name="open_zones_list">Ouvrir la liste des zones</string>
+    
+    <!-- Tabs -->
+    <string name="tab_map">Carte</string>
+    <string name="tab_zones">Zones</string>
 </resources> 

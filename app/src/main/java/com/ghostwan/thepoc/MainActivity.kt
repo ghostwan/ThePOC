@@ -457,16 +457,16 @@ fun MapScreen(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Place, contentDescription = "Carte") },
-                    label = { Text("Carte") },
                     selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 }
+                    onClick = { selectedTab = 0 },
+                    icon = { Icon(Icons.Default.Place, contentDescription = stringResource(R.string.tab_map)) },
+                    label = { Text(stringResource(R.string.tab_map)) },
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.List, contentDescription = "Zones") },
-                    label = { Text("Zones") },
                     selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 }
+                    onClick = { selectedTab = 1 },
+                    icon = { Icon(Icons.Default.List, contentDescription = stringResource(R.string.tab_zones)) },
+                    label = { Text(stringResource(R.string.tab_zones)) },
                 )
             }
         }

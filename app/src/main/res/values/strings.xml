@@ -49,4 +49,8 @@
     <string name="zones_list">Zones list</string>
     <string name="no_zones">No zones created</string>
     <string name="open_zones_list">Open zones list</string>
+    
+    <!-- Tabs -->
+    <string name="tab_map">Map</string>
+    <string name="tab_zones">Zones</string>
 </resources> 

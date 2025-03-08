@@ -3,50 +3,50 @@
     <string name="app_name">ThePOC</string>
     
     <!-- Permissions -->
-    <string name="location_permission_required">Permissions de localisation requises</string>
-    <string name="location_permission_explanation">Pour utiliser le géofencing, l\'application a besoin d\'accéder à votre position. Veuillez autoriser l\'accès à la localisation.</string>
-    <string name="background_location_permission_explanation">Pour détecter les zones en arrière-plan, l\'application a besoin d\'accéder à votre position même lorsque l\'application est fermée. Veuillez autoriser l\'accès à la localisation en arrière-plan.</string>
-    <string name="open_settings">Ouvrir les paramètres</string>
-    <string name="grant_permission">Autoriser</string>
+    <string name="location_permission_required">Location permissions required</string>
+    <string name="location_permission_explanation">To use geofencing, the app needs access to your location. Please allow location access.</string>
+    <string name="background_location_permission_explanation">To detect zones in the background, the app needs access to your location even when the app is closed. Please allow background location access.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="grant_permission">Allow</string>
     
     <!-- Map Screen -->
-    <string name="add_zone">Ajouter une zone</string>
-    <string name="my_location">Ma position</string>
-    <string name="click_to_add_zone">Cliquez sur la carte pour ajouter une zone ou faites un appui long</string>
-    <string name="zone_added_success">Zone ajoutée avec succès</string>
-    <string name="error_adding_zone">Erreur lors de l\'ajout de la zone : %1$s</string>
-    <string name="missing_location_permission">Permission de localisation manquante</string>
+    <string name="add_zone">Add zone</string>
+    <string name="my_location">My location</string>
+    <string name="click_to_add_zone">Click on the map to add a zone or long press</string>
+    <string name="zone_added_success">Zone added successfully</string>
+    <string name="error_adding_zone">Error adding zone: %1$s</string>
+    <string name="missing_location_permission">Missing location permission</string>
     
     <!-- Zone Dialog -->
-    <string name="name_zone">Nommer la zone</string>
-    <string name="zone_name_hint">Nom de la zone</string>
-    <string name="add">Ajouter</string>
-    <string name="cancel">Annuler</string>
-    <string name="geofencing_zone">Zone de géofencing</string>
+    <string name="name_zone">Name the zone</string>
+    <string name="zone_name_hint">Zone name</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="geofencing_zone">Geofencing zone</string>
     
     <!-- Zone Editing -->
-    <string name="edit_zone_radius">Modifier le rayon</string>
-    <string name="edit_zone_name">Modifier le nom</string>
-    <string name="zone_radius">Rayon : %1$d m</string>
-    <string name="save">Sauvegarder</string>
-    <string name="drag_to_resize">Faites glisser pour redimensionner</string>
-    <string name="zone_updated">Zone mise à jour</string>
+    <string name="edit_zone_radius">Edit radius</string>
+    <string name="edit_zone_name">Edit name</string>
+    <string name="zone_radius">Radius: %1$d m</string>
+    <string name="save">Save</string>
+    <string name="drag_to_resize">Drag to resize</string>
+    <string name="zone_updated">Zone updated</string>
     <string name="min_radius">50m</string>
     <string name="max_radius">1000m</string>
-    <string name="rename_zone">Renommer la zone</string>
-    <string name="new_zone_name">Nouveau nom de la zone</string>
-    <string name="zone_details">Détails de la zone</string>
+    <string name="rename_zone">Rename zone</string>
+    <string name="new_zone_name">New zone name</string>
+    <string name="zone_details">Zone details</string>
     <string name="zone_actions">Actions</string>
-    <string name="close">Fermer</string>
+    <string name="close">Close</string>
     
     <!-- Zone Deletion -->
-    <string name="delete_zone">Supprimer la zone</string>
-    <string name="confirm_delete_title">Confirmer la suppression</string>
-    <string name="confirm_delete_message">Êtes-vous sûr de vouloir supprimer la zone \"%1$s\" ?</string>
-    <string name="zone_deleted">Zone supprimée</string>
-    <string name="loading_address">Chargement de l\'adresse...</string>
-    <string name="error_loading_address">Erreur lors du chargement de l\'adresse</string>
-    <string name="zones_list">Liste des zones</string>
-    <string name="no_zones">Aucune zone n\'a été créée</string>
-    <string name="open_zones_list">Ouvrir la liste des zones</string>
+    <string name="delete_zone">Delete zone</string>
+    <string name="confirm_delete_title">Confirm deletion</string>
+    <string name="confirm_delete_message">Are you sure you want to delete zone \"%1$s\"?</string>
+    <string name="zone_deleted">Zone deleted</string>
+    <string name="loading_address">Loading address...</string>
+    <string name="error_loading_address">Error loading address</string>
+    <string name="zones_list">Zones list</string>
+    <string name="no_zones">No zones created</string>
+    <string name="open_zones_list">Open zones list</string>
 </resources> 

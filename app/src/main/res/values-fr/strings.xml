@@ -42,6 +42,7 @@
     
     <!-- Zone Deletion -->
     <string name="delete_zone">Supprimer la zone</string>
+    <string name="move_zone">Deplacer la zone</string>
     <string name="confirm_delete_title">Confirmer la suppression</string>
     <string name="confirm_delete_message">Êtes-vous sûr de vouloir supprimer la zone \"%1$s\" ?</string>
     <string name="zone_deleted">Zone supprimée</string>
@@ -70,4 +71,9 @@
     <string name="event_time">à %1$s</string>
     <string name="event_location">Position : %1$f, %2$f</string>
     <string name="clear_timeline">Effacer l\'historique</string>
+    
+    <!-- Zone Movement -->
+    <string name="zone_moved">Zone déplacée avec succès</string>
+    <string name="error_moving_zone">Erreur lors du déplacement de la zone : %1$s</string>
+    <string name="tap_to_move_zone">Appuyez sur la carte pour deplacer la zone</string>
 </resources> 

@@ -42,6 +42,7 @@
     
     <!-- Zone Deletion -->
     <string name="delete_zone">Delete zone</string>
+    <string name="move_zone">Move zone</string>
     <string name="confirm_delete_title">Confirm deletion</string>
     <string name="confirm_delete_message">Are you sure you want to delete zone \"%1$s\"?</string>
     <string name="zone_deleted">Zone deleted</string>
@@ -70,4 +71,9 @@
     <string name="event_time">at %1$s</string>
     <string name="event_location">Location: %1$f, %2$f</string>
     <string name="clear_timeline">Clear Timeline</string>
+    
+    <!-- Zone Movement -->
+    <string name="zone_moved">Zone moved successfully</string>
+    <string name="error_moving_zone">Error moving zone: %1$s</string>
+    <string name="tap_to_move_zone">Tap anywhere on the map to move the zone</string>
 </resources> 

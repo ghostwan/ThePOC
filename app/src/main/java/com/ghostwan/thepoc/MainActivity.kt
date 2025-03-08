@@ -221,6 +221,9 @@ fun MapScreen(
     var isLoadingAddress by remember { mutableStateOf(false) }
     var zoneName by remember { mutableStateOf("") }
     var isLocationTrackingEnabled by remember { mutableStateOf(false) }
+    var movingGeofence by remember { mutableStateOf<GeofenceData?>(null) }
+    var markerPressStartTime by remember { mutableStateOf<Long?>(null) }
+    var pressedGeofence by remember { mutableStateOf<GeofenceData?>(null) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -535,6 +538,71 @@ fun MapScreen(
         }
     }
 
+    // Fonction pour déplacer une geofence
+    fun moveGeofence(geofence: GeofenceData, newPosition: LatLng) {
+        scope.launch {
+            // Supprimer l'ancienne geofence du système
+            geofencingClient.removeGeofences(listOf(geofence.name))
+            
+            // Créer une nouvelle geofence avec la nouvelle position
+            val newGeofence = Geofence.Builder()
+                .setRequestId(geofence.name)
+                .setCircularRegion(
+                    newPosition.latitude,
+                    newPosition.longitude,
+                    geofence.radius
+                )
+                .setExpirationDuration(GEOFENCE_EXPIRATION)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
+                .build()
+
+            val geofencingRequest = GeofencingRequest.Builder()
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .addGeofence(newGeofence)
+                .build()
+
+            // Mettre à jour la base de données
+            val entity = GeofenceEntity(
+                id = geofence.id.toLong(),
+                name = geofence.name,
+                latitude = newPosition.latitude,
+                longitude = newPosition.longitude,
+                radius = geofence.radius
+            )
+            database.geofenceDao().updateGeofence(entity)
+            
+            // Ajouter la nouvelle geofence au système
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)
+                    .addOnSuccessListener {
+                        // Mettre à jour l'interface
+                        geofences = geofences.map { 
+                            if (it.id == geofence.id) it.copy(latLng = newPosition)
+                            else it
+                        }
+                        
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.zone_moved),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error updating geofence", e)
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.error_moving_zone, e.message),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -599,6 +667,9 @@ fun MapScreen(
                                         showNameDialog = latLng
                                         zoneName = address
                                     }
+                                } else if (movingGeofence != null) {
+                                    moveGeofence(movingGeofence!!, latLng)
+                                    movingGeofence = null
                                 } else {
                                     selectedGeofence = null
                                     isEditingRadius = false
@@ -607,13 +678,15 @@ fun MapScreen(
                         ) {
                             // Afficher les zones existantes
                             geofences.forEach { geofence ->
-        Marker(
+    Marker(
                                     state = MarkerState(position = geofence.latLng),
                                     title = geofence.name,
                                     snippet = context.getString(R.string.geofencing_zone),
                                     onClick = {
-                                        selectedGeofence = geofence
-                                        editingRadius = geofence.radius
+                                        if (movingGeofence == null) {
+                                            selectedGeofence = geofence
+                                            editingRadius = geofence.radius
+                                        }
                                         true
                                     }
                                 )
@@ -621,9 +694,16 @@ fun MapScreen(
                                     center = geofence.latLng,
                                     radius = geofence.radius.toDouble(),
                                     strokeWidth = 2f,
-                                    strokeColor = if (geofence == selectedGeofence) Color.Red else Color.Blue,
-                                    fillColor = if (geofence == selectedGeofence) 
-                                        Color.Red.copy(alpha = 0.3f) else Color.Blue.copy(alpha = 0.3f)
+                                    strokeColor = when {
+                                        geofence == movingGeofence -> Color.Yellow
+                                        geofence == selectedGeofence -> Color.Red
+                                        else -> Color.Blue
+                                    },
+                                    fillColor = when {
+                                        geofence == movingGeofence -> Color.Yellow.copy(alpha = 0.3f)
+                                        geofence == selectedGeofence -> Color.Red.copy(alpha = 0.3f)
+                                        else -> Color.Blue.copy(alpha = 0.3f)
+                                    }
                                 )
                                 
                                 if (geofence == selectedGeofence && isEditingRadius) {
@@ -821,20 +901,45 @@ fun MapScreen(
                                             }
                                         }
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Button(
-                                            onClick = { showDeleteConfirmation = geofence },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.error
-                                            ),
-                                            modifier = Modifier.fillMaxWidth()
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(context.getString(R.string.delete_zone))
+                                            OutlinedButton(
+                                                onClick = { 
+                                                    movingGeofence = geofence
+                                                    selectedGeofence = null
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.tap_to_move_zone),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.PanTool,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(context.getString(R.string.move_zone))
+                                            }
+                                            Button(
+                                                onClick = { showDeleteConfirmation = geofence },
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = MaterialTheme.colorScheme.error
+                                                ),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(context.getString(R.string.delete_zone))
+                                            }
                                         }
                                     }
                                 }

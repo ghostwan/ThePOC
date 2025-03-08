@@ -3,7 +3,9 @@
     <string name="app_name">ThePOC</string>
     
     <!-- Permissions -->
-    <string name="location_permission_required">Les permissions de localisation sont nécessaires pour le géofencing</string>
+    <string name="location_permission_required">Permissions de localisation requises</string>
+    <string name="location_permission_explanation">Pour utiliser le géofencing, l\'application a besoin d\'accéder à votre position. Veuillez activer les permissions de localisation dans les paramètres.</string>
+    <string name="open_settings">Ouvrir les paramètres</string>
     
     <!-- Map Screen -->
     <string name="add_zone">Ajouter une zone</string>

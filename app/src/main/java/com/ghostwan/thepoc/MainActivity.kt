@@ -60,6 +60,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
+import android.provider.Settings
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -140,20 +141,6 @@ fun MapScreen(
     var isLoadingAddress by remember { mutableStateOf(false) }
     var zoneName by remember { mutableStateOf("") }
 
-    // Charger les geofences depuis la base de données
-    LaunchedEffect(Unit) {
-        database.geofenceDao().getAllGeofences().collectLatest { entities ->
-            geofences = entities.map { entity ->
-                GeofenceData(
-                    id = entity.id.toString(),
-                    latLng = entity.toLatLng(),
-                    radius = entity.radius,
-                    name = entity.name
-                )
-            }
-        }
-    }
-
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -167,6 +154,7 @@ fun MapScreen(
                     ) == PackageManager.PERMISSION_GRANTED)
         )
     }
+    var showPermissionDialog by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -181,11 +169,21 @@ fun MapScreen(
         hasLocationPermission = hasFineLocation && hasBackgroundLocation
         
         if (!hasLocationPermission) {
-            Toast.makeText(
-                context,
-                context.getString(R.string.location_permission_required),
-                Toast.LENGTH_LONG
-            ).show()
+            showPermissionDialog = true
+        }
+    }
+
+    // Charger les geofences depuis la base de données
+    LaunchedEffect(Unit) {
+        database.geofenceDao().getAllGeofences().collectLatest { entities ->
+            geofences = entities.map { entity ->
+                GeofenceData(
+                    id = entity.id.toString(),
+                    latLng = entity.toLatLng(),
+                    radius = entity.radius,
+                    name = entity.name
+                )
+            }
         }
     }
 
@@ -809,6 +807,31 @@ fun MapScreen(
                 showRenameDialog = null
             },
             onDismiss = { showRenameDialog = null }
+        )
+    }
+
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text(context.getString(R.string.location_permission_required)) },
+            text = { Text(context.getString(R.string.location_permission_explanation)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = android.net.Uri.fromParts("package", context.packageName, null)
+                        })
+                        showPermissionDialog = false
+                    }
+                ) {
+                    Text(context.getString(R.string.open_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionDialog = false }) {
+                    Text(context.getString(R.string.cancel))
+                }
+            }
         )
     }
 }

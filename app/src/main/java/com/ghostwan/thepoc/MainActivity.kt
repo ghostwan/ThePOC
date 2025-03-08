@@ -64,6 +64,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.compose.material.icons.filled.LocationSearching
+import kotlin.math.abs
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -197,7 +198,7 @@ class MainActivity : ComponentActivity() {
                         try {
                             if (!cameraState.isMoving) {
                                 cameraState.animate(
-                                    update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                                    update = CameraUpdateFactory.newLatLng(latLng),
                                     durationMs = 1000
                                 )
                             }
@@ -244,6 +245,9 @@ fun MapScreen(
     var hasLocationPermission by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var shouldShowBackgroundPermissionDialog by remember { mutableStateOf(false) }
+
+    var isLocationCentered by remember { mutableStateOf(false) }
+    var currentLocation by remember { mutableStateOf<LatLng?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -627,13 +631,29 @@ fun MapScreen(
         }
     }
 
-    // Désactiver le suivi de position quand l'utilisateur déplace la carte manuellement
-    LaunchedEffect(cameraPositionState.isMoving) {
-        if (cameraPositionState.isMoving) {
-            isLocationTrackingEnabled = false
-            if (context is MainActivity) {
-                context.isLocationTrackingEnabled = false
-            }
+    // Vérifier si la carte est centrée sur la position actuelle
+    LaunchedEffect(cameraPositionState.position, currentLocation) {
+        currentLocation?.let { location ->
+            isLocationCentered = !cameraPositionState.isMoving && 
+                abs(location.latitude - cameraPositionState.position.target.latitude) < 0.0001 &&
+                abs(location.longitude - cameraPositionState.position.target.longitude) < 0.0001
+            isLocationTrackingEnabled = isLocationCentered
+        }
+    }
+
+    // Mettre à jour la position actuelle
+    LaunchedEffect(Unit) {
+        if (context is MainActivity && ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            (context as MainActivity).fusedLocationClient.lastLocation
+                .addOnSuccessListener { location ->
+                    location?.let {
+                        currentLocation = LatLng(it.latitude, it.longitude)
+                    }
+                }
         }
     }
 
@@ -764,19 +784,18 @@ fun MapScreen(
                             FloatingActionButton(
                                 onClick = {
                                     if (context is MainActivity) {
-                                        isLocationTrackingEnabled = true
                                         context.centerOnCurrentLocation(cameraPositionState)
                                     }
                                 },
                                 containerColor = MaterialTheme.colorScheme.surface
                             ) {
                                 Icon(
-                                    imageVector = if (isLocationTrackingEnabled) 
+                                    imageVector = if (isLocationCentered) 
                                         Icons.Default.MyLocation 
                                     else 
                                         Icons.Default.LocationSearching,
                                     contentDescription = stringResource(R.string.my_location),
-                                    tint = if (isLocationTrackingEnabled)
+                                    tint = if (isLocationCentered)
                                         MaterialTheme.colorScheme.primary
                                     else
                                         MaterialTheme.colorScheme.onSurface

@@ -1,7 +1,6 @@
 # Fichiers générés par Android Studio
 *.iml
 .gradle
-/local.properties
 /.idea
 .DS_Store
 /build
@@ -20,3 +19,7 @@ local.properties
 # Fichiers système
 .DS_Store
 Thumbs.db 
+
+# Fichiers de configuration
+google-services.json
+/local.properties

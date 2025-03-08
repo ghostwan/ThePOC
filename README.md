@@ -1,6 +1,10 @@
 # ThePOC
 
-A proof-of-concept Android application designed to test and improve geofencing accuracy in mobile applications. This tool helps developers validate entry and exit events in geofenced areas by providing a comprehensive timeline of detected events versus real-world movements.
+This project has two main goals. First, it's a proof-of-concept Android app designed to test and improve geofencing accuracy. It helps developers confirm entry and exit events in geofenced areas by showing a timeline of detected events against real-world movement. Second, it tests the feasibility of developing an Android app with [Cursor](https://www.cursor.com/) using only prompts. (Occasionally, Cursor used French commit messages because of the French prompts, even when asked to commit in English. 😅)
+
+P.S. 1: Initially, I intentionally refrained from specifying any architectural pattern, resulting in a somewhat ad-hoc structure. I intend to address this in a future commit by implementing MVVM and/or a clean architecture.
+
+P.S. 2: I am strictly limiting myself to modifying files, including this README, only when Cursor encounters a deadlock. I will document the time of each manual code modification here.
 
 ## Purpose
 

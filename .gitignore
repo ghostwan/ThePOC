@@ -23,3 +23,7 @@ Thumbs.db
 # Fichiers de configuration
 google-services.json
 /local.properties
+
+# Fichiers de signature
+*.keystore
+*.jks

@@ -2,11 +2,26 @@
 
 This project has two main goals. First, it's a proof-of-concept Android app designed to test and improve geofencing accuracy. It helps developers confirm entry and exit events in geofenced areas by showing a timeline of detected events against real-world movement. Second, it tests the feasibility of developing an Android app with [Cursor](https://www.cursor.com/) using only prompts. (Occasionally, Cursor used French commit messages because of the French prompts, even when asked to commit in English. 😅)
 
-P.S. 1: Initially, I intentionally refrained from specifying any architectural pattern, resulting in a somewhat ad-hoc structure. I intend to address this in a future commit by implementing MVVM and/or a clean architecture.
+## Cursor POC
 
-P.S. 2: I am strictly limiting myself to modifying files, including this README, only when Cursor encounters a deadlock. I will document the time of each manual code modification here.
+Initially, I intentionally refrained from specifying any architectural pattern, resulting in a somewhat ad-hoc structure. I intend to address this in a future commit by implementing MVVM and/or a clean architecture.
 
-## Purpose
+I am strictly limiting myself to modifying files, including this README, only when Cursor encounters a deadlock.  (That's why the end of the README with architecture it's WTF 😅), I will document the time of each manual code modification here.
+
+### Cursor Chat History
+
+[Content](CHAT_HISTORY.md)
+
+- It starts from older what is  newer
+- The App crashed so I lost previous history 
+- All XXXX, it's me obfuscating sensitive data 
+- If you are an english speaker, Google trans...Gemini / Chat GPT / Claude will help you understand what's will follow
+- The export doesn't keep command line execution and code preview 
+- I used [cursor-export](https://github.com/WooodHead/cursor-export) to export my cursor chat history
+
+### Manual intervention
+
+## Goefencing App 
 
 The main goal of this application is to:
 - Test geofencing behavior in various real-world conditions

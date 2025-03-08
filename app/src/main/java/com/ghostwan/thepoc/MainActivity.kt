@@ -58,6 +58,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material.icons.filled.LocationOn
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -594,7 +595,7 @@ fun MapScreen(
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         ) {
                             Icon(
-                                imageVector = Icons.Default.MyLocation,
+                                imageVector = Icons.Default.LocationOn,
                                 contentDescription = context.getString(R.string.my_location)
                             )
                         }
@@ -717,7 +718,7 @@ fun MapScreen(
                                                 modifier = Modifier.weight(1f)
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.RadioButtonChecked,
+                                                    imageVector = Icons.Default.Place,
                                                     contentDescription = null,
                                                     modifier = Modifier.size(18.dp)
                                                 )

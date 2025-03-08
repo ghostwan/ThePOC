@@ -80,7 +80,7 @@ data class GeofenceData(
 class MainActivity : ComponentActivity() {
     private lateinit var geofencingClient: GeofencingClient
     private lateinit var database: AppDatabase
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationCallback: LocationCallback? = null
     private var cameraPositionState: CameraPositionState? = null
     var isLocationTrackingEnabled = false
@@ -159,17 +159,6 @@ class MainActivity : ComponentActivity() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     Log.d(TAG, "Location update: ${location.latitude}, ${location.longitude}")
-                    val latLng = LatLng(location.latitude, location.longitude)
-                    if (isLocationTrackingEnabled) {
-                        cameraPositionState?.let { camera ->
-                            lifecycleScope.launch {
-                                camera.animate(
-                                    update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
-                                    durationMs = 1000
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -191,6 +180,32 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         locationCallback?.let { callback ->
             fusedLocationClient.removeLocationUpdates(callback)
+        }
+    }
+
+    fun centerOnCurrentLocation(cameraState: CameraPositionState) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val latLng = LatLng(it.latitude, it.longitude)
+                    lifecycleScope.launch {
+                        try {
+                            if (!cameraState.isMoving) {
+                                cameraState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(latLng, 15f),
+                                    durationMs = 1000
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error animating camera: ${e.message}", e)
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -225,24 +240,7 @@ fun MapScreen(
     var markerPressStartTime by remember { mutableStateOf<Long?>(null) }
     var pressedGeofence by remember { mutableStateOf<GeofenceData?>(null) }
 
-    var hasLocationPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED &&
-            (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED) &&
-            (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED)
-        )
-    }
+    var hasLocationPermission by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var shouldShowBackgroundPermissionDialog by remember { mutableStateOf(false) }
 
@@ -307,6 +305,31 @@ fun MapScreen(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         }
+    }
+
+    fun checkLocationPermissions() {
+        hasLocationPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED &&
+        (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED) &&
+        (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED)
+
+        if (!hasLocationPermission) {
+            requestLocationPermissions()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        checkLocationPermissions()
     }
 
     // Charger les geofences depuis la base de données
@@ -603,6 +626,16 @@ fun MapScreen(
         }
     }
 
+    // Désactiver le suivi de position quand l'utilisateur déplace la carte manuellement
+    LaunchedEffect(cameraPositionState.isMoving) {
+        if (cameraPositionState.isMoving) {
+            isLocationTrackingEnabled = false
+            if (context is MainActivity) {
+                context.isLocationTrackingEnabled = false
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -729,9 +762,8 @@ fun MapScreen(
                         ) {
                             FloatingActionButton(
                                 onClick = {
-                                    isLocationTrackingEnabled = !isLocationTrackingEnabled
                                     if (context is MainActivity) {
-                                        context.isLocationTrackingEnabled = isLocationTrackingEnabled
+                                        context.centerOnCurrentLocation(cameraPositionState)
                                     }
                                 },
                                 containerColor = if (isLocationTrackingEnabled) 

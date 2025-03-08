@@ -834,11 +834,7 @@ fun MapScreen(
                                         Slider(
                                             value = editingRadius,
                                             onValueChange = { editingRadius = it },
-                                            valueRange = MIN_RADIUS..MAX_RADIUS,
-                                            onValueChangeFinished = {
-                                                updateGeofenceRadius(geofence, editingRadius)
-                                                isEditingRadius = false
-                                            }
+                                            valueRange = MIN_RADIUS..MAX_RADIUS
                                         )
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -909,6 +905,7 @@ fun MapScreen(
                                                 onClick = { 
                                                     movingGeofence = geofence
                                                     selectedGeofence = null
+                                                    isEditingRadius = false
                                                     Toast.makeText(
                                                         context,
                                                         context.getString(R.string.tap_to_move_zone),

@@ -1208,7 +1208,7 @@ fun MapScreen(
                 }
                 2 -> {
                     // Timeline
-                    TimelineScreen(database)
+                    TimelineScreen()
                 }
             }
         }

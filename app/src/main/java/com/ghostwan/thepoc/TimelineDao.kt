@@ -1,9 +1,6 @@
 package com.ghostwan.thepoc
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Delete
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -16,6 +13,9 @@ interface TimelineDao {
 
     @Delete
     suspend fun deleteEvent(event: TimelineEvent)
+
+    @Update
+    suspend fun updateEvent(event: TimelineEvent)
 
     @Query("DELETE FROM timeline_events")
     suspend fun deleteAllEvents()

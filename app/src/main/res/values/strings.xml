@@ -66,11 +66,12 @@
     
     <!-- Timeline -->
     <string name="timeline_empty">No events recorded yet</string>
-    <string name="event_enter">Entered zone</string>
-    <string name="event_exit">Left zone</string>
+    <string name="event_enter">Entrée</string>
+    <string name="event_exit">Sortie</string>
     <string name="event_time">at %1$s</string>
     <string name="event_location">Location: %1$f, %2$f</string>
     <string name="clear_timeline">Clear Timeline</string>
+    <string name="next">Suivant</string>
     
     <!-- Zone Movement -->
     <string name="zone_moved">Zone moved successfully</string>

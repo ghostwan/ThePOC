@@ -66,16 +66,21 @@
     
     <!-- Timeline -->
     <string name="timeline_empty">No events recorded yet</string>
-    <string name="event_enter">Entrée</string>
-    <string name="event_exit">Sortie</string>
+    <string name="event_enter">Entered zone</string>
+    <string name="event_exit">Left zone</string>
     <string name="event_time">at %1$s</string>
     <string name="event_location">Location: %1$f, %2$f</string>
     <string name="clear_timeline">Clear Timeline</string>
-    <string name="next">Suivant</string>
+    <string name="next">Next</string>
     
     <!-- Zone Movement -->
     <string name="zone_moved">Zone moved successfully</string>
     <string name="error_moving_zone">Error moving zone: %1$s</string>
     <string name="tap_to_move_zone">Tap on the map to move the zone</string>
     <string name="tap_to_add_zone">Tap on the map to add a zone</string>
+    
+    <!-- Coordinates -->
+    <string name="coordinates">Coordinates</string>
+    <string name="coordinates_copied">Coordinates copied to clipboard</string>
+    <string name="copy_coordinates">Copy coordinates</string>
 </resources> 

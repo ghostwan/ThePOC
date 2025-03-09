@@ -88,6 +88,14 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
 
 private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
@@ -1008,6 +1016,61 @@ fun MapScreen(
                                             text = context.getString(R.string.zone_radius, editingRadius.toInt()),
                                             style = MaterialTheme.typography.bodyMedium
                                         )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        Text(
+                                            text = stringResource(R.string.coordinates),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) {}
+                                                .pointerInput(Unit) {
+                                                    detectTapGestures(
+                                                        onLongPress = { _: Offset ->
+                                                            val coordinates = "%.6f, %.6f".format(
+                                                                geofence.latLng.latitude,
+                                                                geofence.latLng.longitude
+                                                            )
+                                                            val clipboardManager = context.getSystemService(
+                                                                Context.CLIPBOARD_SERVICE
+                                                            ) as ClipboardManager
+                                                            val clip = ClipData.newPlainText("Coordonnées", coordinates)
+                                                            clipboardManager.setPrimaryClip(clip)
+                                                            Toast.makeText(
+                                                                context,
+                                                                context.getString(R.string.coordinates_copied),
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                    )
+                                                }
+                                                .padding(vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "%.6f, %.6f".format(
+                                                    geofence.latLng.latitude,
+                                                    geofence.latLng.longitude
+                                                ),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.ContentCopy,
+                                                contentDescription = stringResource(R.string.copy_coordinates),
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                         
                                         if (isEditingRadius) {
                                             Spacer(modifier = Modifier.height(16.dp))

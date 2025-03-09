@@ -25,6 +25,7 @@ I am strictly limiting myself to modifying files, including this README, only wh
 - `07/03/2025` : Swipe-to-delete was implemented, but the event deletion function was missing and unfixable. I resorted to a rhetorical question to get it to create the function.
 - `08/03/2025 23h45` : In an attempt to enhance the search bar, the buttons were deleted. As Cursor had difficulty restoring them, I manually reverted the code to a prior commit.
 - `09/03/2025 00h16` : Add screenshot in the README
+- `09/03/2025 22h44`: Cursor loops on timeline and end by deleting all the file ;)  
 
 ## Goefencing App 
 

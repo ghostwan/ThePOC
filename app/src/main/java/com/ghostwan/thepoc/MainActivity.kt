@@ -129,6 +129,9 @@ class MainActivity : ComponentActivity() {
         Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY)
         placesClient = Places.createClient(this)
         
+        // Vérifier si on doit ouvrir la timeline
+        val openTimeline = intent.getBooleanExtra("openTimeline", false)
+        
         setContent {
             MaterialTheme {
                 val systemUiController = rememberSystemUiController()
@@ -154,7 +157,13 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     cameraPositionState = cameraState
-                    MapScreen(geofencingClient, geofencePendingIntent, database, cameraState)
+                    MapScreen(
+                        geofencingClient,
+                        geofencePendingIntent,
+                        database,
+                        cameraState,
+                        initialTab = if (openTimeline) 2 else 0
+                    )
                 }
             }
         }
@@ -256,9 +265,10 @@ fun MapScreen(
     geofencingClient: GeofencingClient,
     geofencePendingIntent: PendingIntent,
     database: AppDatabase,
-    cameraPositionState: CameraPositionState
+    cameraPositionState: CameraPositionState,
+    initialTab: Int
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(initialTab) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -1151,7 +1161,16 @@ fun MapScreen(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             FloatingActionButton(
-                                onClick = { isAddingGeofence = !isAddingGeofence },
+                                onClick = { 
+                                    isAddingGeofence = !isAddingGeofence
+                                    if (isAddingGeofence) {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.tap_to_add_zone),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                },
                                 containerColor = if (isAddingGeofence) 
                                     MaterialTheme.colorScheme.primaryContainer 
                                 else 

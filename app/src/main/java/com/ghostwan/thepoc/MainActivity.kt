@@ -108,7 +108,6 @@ class MainActivity : ComponentActivity() {
     lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationCallback: LocationCallback? = null
     private var cameraPositionState: CameraPositionState? = null
-    var isLocationTrackingEnabled = false
     lateinit var placesClient: PlacesClient
     
     private val geofencePendingIntent: PendingIntent by lazy {
@@ -262,12 +261,8 @@ fun MapScreen(
     var selectedTab by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val paris = LatLng(48.8566, 2.3522)
-    var searchQuery by remember { mutableStateOf("") }
-    var isSearching by remember { mutableStateOf(false) }
 
     var isMapLoaded by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     var isAddingGeofence by remember { mutableStateOf(false) }
     var geofences by remember { mutableStateOf(listOf<GeofenceData>()) }
     var showNameDialog by remember { mutableStateOf<LatLng?>(null) }
@@ -280,8 +275,6 @@ fun MapScreen(
     var zoneName by remember { mutableStateOf("") }
     var isLocationTrackingEnabled by remember { mutableStateOf(false) }
     var movingGeofence by remember { mutableStateOf<GeofenceData?>(null) }
-    var markerPressStartTime by remember { mutableStateOf<Long?>(null) }
-    var pressedGeofence by remember { mutableStateOf<GeofenceData?>(null) }
 
     var hasLocationPermission by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }

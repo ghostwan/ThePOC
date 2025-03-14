@@ -101,7 +101,7 @@ private const val TAG = "MapScreen"
 private const val MIN_RADIUS = 50f // 50 mètres minimum
 private const val MAX_RADIUS = 500f // 500 mètres maximum
 private const val GEOFENCE_RADIUS = 100f // 100 mètres par défaut
-private const val GEOFENCE_EXPIRATION = 24 * 60 * 60 * 1000L // 24 heures
+private const val GEOFENCE_EXPIRATION = Geofence.NEVER_EXPIRE
 
 data class GeofenceData(
     val id: String,

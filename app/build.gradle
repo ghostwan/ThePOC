@@ -59,7 +59,7 @@ android {
             firebaseAppDistribution {
                 artifactType = "APK"
                 groups = "Netatmo"
-                releaseNotes = "Version de test"
+                releaseNotesFile = file("../release_notes.md")
             }
         }
         

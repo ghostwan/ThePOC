@@ -700,7 +700,7 @@ fun MapScreen(
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            (context as MainActivity).fusedLocationClient.lastLocation
+            context.fusedLocationClient.lastLocation
                 .addOnSuccessListener { location ->
                     location?.let {
                         currentLocation = LatLng(it.latitude, it.longitude)

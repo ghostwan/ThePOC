@@ -97,6 +97,8 @@ git clone https://github.com/ghostwan/ThePOC.git
 MAPS_API_KEY=your_api_key_here
 ```
 
+Get your API key from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+
 3. Build and run the project:
 ```bash
 ./gradlew assembleDebug

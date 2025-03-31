@@ -90,16 +90,14 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         )
 
         // Créer le canal de notification pour Android 8.0 et supérieur
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.geofence_channel_name),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = context.getString(R.string.geofence_channel_description)
-            }
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            context.getString(R.string.geofence_channel_name),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = context.getString(R.string.geofence_channel_description)
         }
+        notificationManager.createNotificationChannel(channel)
 
         // Construire la notification
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
